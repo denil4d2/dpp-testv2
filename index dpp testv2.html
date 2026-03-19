@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DOVISTA DPP Architecture Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      background: linear-gradient(180deg, #eef3f2 0%, #f7f7f5 42%, #edf2f7 100%);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: #0f172a;
+    }
+
+    .glass {
+      background: rgba(255, 255, 255, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+
+    .grid-bg {
+      background-image:
+        linear-gradient(to right, rgba(148, 163, 184, 0.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+      background-size: 48px 48px;
+    }
+
+    .node {
+      position: absolute;
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.75);
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      transition: transform .22s ease, box-shadow .22s ease, opacity .22s ease, border-color .22s ease, background .22s ease;
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+
+    .node:hover {
+      transform: translateY(-2px) scale(1.015);
+    }
+
+    .node.dimmed {
+      opacity: .42;
+      filter: saturate(.5);
+    }
+
+    .node.active {
+      box-shadow: 0 20px 60px rgba(15,23,42,0.12), 0 0 0 1px rgba(16,185,129,0.18);
+      animation: floatPulse 1.8s infinite ease-in-out;
+    }
+
+    .node.blue { background: #f8fbff; border-color: #dbeafe; }
+    .node.emerald { background: #f1fdf7; border-color: #d1fae5; }
+    .node.amber { background: #fffbeb; border-color: #fde68a; }
+    .node.rose { background: #fff7f9; border-color: #fecdd3; }
+
+    .node-top {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+      align-items: flex-start;
+    }
+
+    .node-kicker {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .2em;
+      color: #64748b;
+    }
+
+    .node-title {
+      margin-top: 4px;
+      font-size: 15px;
+      line-height: 1.2;
+      font-weight: 600;
+      color: #0f172a;
+    }
+
+    .node-sub {
+      font-size: 12px;
+      line-height: 1.35;
+      color: #475569;
+      margin-top: 10px;
+    }
+
+    .node-icon {
+      border-radius: 18px;
+      background: rgba(255,255,255,.85);
+      padding: 8px;
+      color: #475569;
+      box-shadow: 0 2px 8px rgba(15,23,42,.06);
+      flex-shrink: 0;
+    }
+
+    .badge-pill {
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-size: 12px;
+      line-height: 1;
+      border: 1px solid #e2e8f0;
+      background: rgba(255,255,255,.8);
+      color: #475569;
+    }
+
+    .btn {
+      border: 1px solid #e2e8f0;
+      background: white;
+      color: #0f172a;
+      border-radius: 18px;
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background .2s ease, transform .2s ease;
+    }
+
+    .btn:hover { background: #f8fafc; }
+    .btn:active { transform: scale(.98); }
+
+    .toggle {
+      display: inline-flex;
+      border: 1px solid #e2e8f0;
+      background: white;
+      border-radius: 18px;
+      padding: 4px;
+      gap: 4px;
+    }
+
+    .toggle button {
+      border: 0;
+      background: transparent;
+      padding: 9px 12px;
+      border-radius: 14px;
+      font-size: 14px;
+      cursor: pointer;
+      color: #475569;
+    }
+
+    .toggle button.active {
+      background: #f1f5f9;
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    .step-card {
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,.85);
+      background: rgba(255,255,255,.82);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 60px rgba(15,23,42,.12);
+      transition: opacity .25s ease, transform .25s ease;
+    }
+
+    .step-item {
+      display: flex;
+      gap: 12px;
+      width: 100%;
+      text-align: left;
+      border: 1px solid #e2e8f0;
+      background: white;
+      padding: 12px;
+      border-radius: 22px;
+      cursor: pointer;
+      transition: background .2s ease, border-color .2s ease;
+    }
+
+    .step-item:hover { background: #f8fafc; }
+    .step-item.active {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+
+    .phone-shell {
+      width: 220px;
+      border-radius: 32px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      padding: 12px;
+      box-shadow: 0 30px 80px rgba(15,23,42,.15);
+      margin: 0 auto;
+    }
+
+    .phone-live {
+      animation: pulseLite 1.5s infinite ease-in-out;
+    }
+
+    @keyframes pulseLite {
+      0%,100% { transform: scale(1); }
+      50% { transform: scale(1.06); }
+    }
+
+    @keyframes floatPulse {
+      0%,100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-2px) scale(1.012); }
+    }
+
+    .flow-dot, .flow-dot-2 {
+      offset-rotate: 0deg;
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      pointer-events: none;
+      opacity: 0;
+    }
+
+    .flow-dot {
+      background: rgba(255,255,255,.95);
+      box-shadow: 0 0 0 2px rgba(16,185,129,.18);
+    }
+
+    .flow-dot-2 {
+      width: 7px;
+      height: 7px;
+      background: rgba(16,185,129,.95);
+    }
+
+    .flow-active .flow-dot,
+    .flow-active .flow-dot-2 {
+      opacity: 1;
+      animation: none;
+    }
+
+    .detail-card, .info-card {
+      border-radius: 24px;
+      border: 1px solid #e2e8f0;
+      background: white;
+      padding: 16px;
+      box-shadow: 0 1px 2px rgba(15,23,42,.04);
+    }
+
+    @media (max-width: 1280px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+      .content-grid {
+        grid-template-columns: 1fr;
+      }
+      .canvas-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="mx-auto max-w-[1700px] p-4 md:p-8">
+    <div class="glass mb-5 rounded-[28px] border border-white/70 p-5 shadow-[0_20px_70px_rgba(15,23,42,0.08)] md:p-6">
+      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <div class="mb-3 flex flex-wrap items-center gap-2">
+            <span class="badge-pill !border-emerald-200 !bg-emerald-50 !text-emerald-700">DOVISTA concept demo</span>
+            <span class="badge-pill">Premium presentation mode</span>
+          </div>
+          <h1 class="text-3xl font-semibold tracking-tight md:text-4xl">Digital Product Passport Architecture</h1>
+          <p class="mt-2 max-w-4xl text-sm leading-6 text-slate-600 md:text-[15px]">
+            An executive-ready architecture story for internal presentations, combining system landscape, guided data flow, stakeholder access and verification logic.
+          </p>
+        </div>
+        <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+          <div class="toggle">
+            <button id="execBtn" class="active">Executive view</button>
+            <button id="techBtn">Technical view</button>
+          </div>
+          <div class="flex items-center gap-2">
+            <button id="playBtn" class="btn">Pause</button>
+            <button id="resetBtn" class="btn">Reset</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="main-grid grid gap-6 xl:grid-cols-[1.28fr_420px]">
+      <div class="glass overflow-hidden rounded-[32px] border border-white/70 shadow-[0_30px_90px_rgba(15,23,42,0.1)]">
+        <div class="border-b border-slate-200/80 px-5 py-4 md:px-7 md:py-5">
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div>
+              <div class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Architecture flow canvas</div>
+              <div class="mt-1 text-xl font-semibold text-slate-900">From product event to passport consumption</div>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-slate-500">
+              <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Active flow</span>
+              <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span> Context links</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="canvas-grid grid xl:grid-cols-[1fr_280px]">
+          <div id="canvasArea" class="relative aspect-[16/9] min-h-[700px] overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(255,255,255,0.9),rgba(248,250,252,0.95)_45%,rgba(241,245,249,0.95)_100%)]">
+            <div class="grid-bg absolute inset-0 opacity-40"></div>
+            <div class="absolute left-[18%] top-[4%] rounded-full border border-slate-200 bg-white/90 px-4 py-1.5 text-[11px] uppercase tracking-[0.18em] text-slate-500 shadow-sm">DOVISTA internal systems</div>
+            <div class="absolute left-[57%] top-[4%] rounded-full border border-emerald-200 bg-emerald-50/90 px-4 py-1.5 text-[11px] uppercase tracking-[0.18em] text-emerald-700 shadow-sm">In-house DPP platform</div>
+            <div class="absolute right-[6%] top-[4%] rounded-full border border-amber-200 bg-amber-50/90 px-4 py-1.5 text-[11px] uppercase tracking-[0.18em] text-amber-700 shadow-sm">Stakeholder access</div>
+
+            <svg id="edgeSvg" viewBox="0 0 156 82" class="absolute inset-0 h-full w-full"></svg>
+            <div id="nodeLayer" class="absolute inset-0"></div>
+
+            <div class="absolute bottom-5 left-5 right-5 md:bottom-6 md:left-6 md:right-6">
+              <div id="stepCard" class="step-card p-4 md:p-5">
+                <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <div id="stepKicker" class="mb-1 text-[11px] uppercase tracking-[0.22em] text-emerald-700"></div>
+                    <div id="stepTitle" class="text-lg font-semibold text-slate-900 md:text-xl"></div>
+                    <div id="stepSubtitle" class="mt-1 text-sm text-slate-500"></div>
+                  </div>
+                  <span class="badge-pill !border-emerald-200 !bg-emerald-50 !text-emerald-700">Guided flow</span>
+                </div>
+                <p id="stepDescription" class="mt-3 max-w-4xl text-sm leading-6 text-slate-600 md:text-[15px]"></p>
+              </div>
+            </div>
+          </div>
+
+          <div class="border-t border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(248,250,252,0.9))] xl:border-l xl:border-t-0">
+            <div class="space-y-5 p-5 md:p-6">
+              <div>
+                <div class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Selected node</div>
+                <div id="detailTitle" class="mt-1 text-xl font-semibold text-slate-900"></div>
+                <div id="detailSub" class="mt-1 text-sm text-slate-500"></div>
+              </div>
+
+              <div class="detail-card">
+                <div class="text-sm font-medium text-slate-900">Narrative</div>
+                <p id="detailNarrative" class="mt-2 text-sm leading-6 text-slate-600"></p>
+              </div>
+
+              <div class="detail-card">
+                <div class="text-sm font-medium text-slate-900">Current story emphasis</div>
+                <p id="detailStory" class="mt-2 text-sm leading-6 text-slate-600"></p>
+              </div>
+
+              <div>
+                <div class="mb-3 text-sm font-medium text-slate-900">Presentation path</div>
+                <div id="stepList" class="space-y-2"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="space-y-6">
+        <div class="glass rounded-[32px] border border-white/70 shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
+          <div class="p-5 md:p-6">
+            <div class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Mobile scan journey</div>
+            <div class="mt-2 text-lg font-semibold text-slate-900">QR to DPP experience</div>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+              This panel helps sell the concept visually by showing how the architecture resolves into an actual stakeholder touchpoint.
+            </p>
+            <div class="mt-5">
+              <div class="phone-shell">
+                <div class="mx-auto mb-3 h-1.5 w-16 rounded-full bg-slate-300"></div>
+                <div class="overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#eef2f7)]">
+                  <div class="border-b border-slate-200 bg-white px-4 py-3">
+                    <div class="text-[11px] uppercase tracking-[0.18em] text-slate-500">Mobile DPP view</div>
+                    <div class="mt-1 text-sm font-semibold text-slate-900">Product Passport</div>
+                  </div>
+                  <div class="p-4">
+                    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
+                      <div class="text-xs text-slate-500">Resolved ID</div>
+                      <div class="mt-1 text-sm font-semibold text-slate-900">dpp/{id}</div>
+                    </div>
+                    <div class="mt-3 grid grid-cols-2 gap-2">
+                      <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                        <div class="text-[11px] text-slate-500">Documentation</div>
+                        <div class="mt-1 text-xs font-medium text-slate-900">DoP / DoC</div>
+                      </div>
+                      <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                        <div class="text-[11px] text-slate-500">Service</div>
+                        <div class="mt-1 text-xs font-medium text-slate-900">Repair view</div>
+                      </div>
+                    </div>
+                    <div class="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
+                      <div class="flex items-center justify-between">
+                        <div>
+                          <div class="text-[11px] text-slate-500">Scan state</div>
+                          <div class="mt-1 text-sm font-medium text-slate-900">QR resolved successfully</div>
+                        </div>
+                        <div id="phoneLive" class="phone-live rounded-full bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-700">Live</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass rounded-[32px] border border-white/70 shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
+          <div class="p-5 md:p-6">
+            <div class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Why this version presents better</div>
+            <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
+              <p>It reads like a premium internal concept deck rather than a technical sketch.</p>
+              <p>The visual hierarchy separates internal systems, core DPP platform and stakeholder access.</p>
+              <p>The executive and technical views let you adjust the language depending on who is in the room.</p>
+              <p>The phone mockup grounds the architecture in an outcome people can instantly understand.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const steps = [
+      {
+        id: 1,
+        title: "Production event created",
+        subtitle: "ERP/MES initiates a new passport flow",
+        activeNodes: ["erp", "fabric"],
+        activeEdges: ["erp-fabric"],
+        description: "A batch or production event is created in ERP/MES. This becomes the operational trigger for downstream DPP packaging and publication.",
+      },
+      {
+        id: 2,
+        title: "Source data assembled",
+        subtitle: "Product, compliance and environmental inputs are standardized",
+        activeNodes: ["pim", "qms", "lca", "idhub", "fabric", "plm"],
+        activeEdges: ["pim-fabric", "qms-fabric", "lca-fabric", "idhub-fabric", "plm-idhub"],
+        description: "Relevant upstream systems contribute product structure, documentation, environmental data and persistent identifiers into a governed transformation layer.",
+      },
+      {
+        id: 3,
+        title: "DPP package persisted",
+        subtitle: "The publishable package is stored centrally",
+        activeNodes: ["fabric", "package"],
+        activeEdges: ["fabric-package"],
+        description: "The standardized DPP package is stored in the in-house data platform so each product or batch can resolve to a coherent, governed data object.",
+      },
+      {
+        id: 4,
+        title: "Identifier and QR generated",
+        subtitle: "Physical product connects to digital record",
+        activeNodes: ["package", "qr"],
+        activeEdges: ["package-qr"],
+        description: "A QR code and persistent product identifier are generated, creating the bridge between the physical unit and its digital passport entry.",
+      },
+      {
+        id: 5,
+        title: "Portal and API published",
+        subtitle: "Human-readable and machine-readable access exposed",
+        activeNodes: ["package", "portal", "api"],
+        activeEdges: ["package-portal", "portal-api"],
+        description: "The portal publishes a user-facing DPP view while structured outputs are made available for system integration and downstream digital use cases.",
+      },
+      {
+        id: 6,
+        title: "Use, service and verification",
+        subtitle: "Stakeholders access the passport through different views",
+        activeNodes: ["portal", "mobile", "users", "service", "bim", "eu", "authorities", "backup"],
+        activeEdges: ["portal-mobile", "portal-users", "portal-service", "api-bim", "portal-eu", "eu-authorities", "package-backup"],
+        description: "End-users, service technicians, BIM environments and authorities consume the passport through tailored access paths, while backup hosting supports resilience.",
+      },
+    ];
+
+    const nodes = {
+      suppliers: { id: "suppliers", label: "Suppliers & Market Inputs", sub: "Supplier portals · specifications · project requirements", x: 2, y: 35, w: 14, h: 16, tone: "rose", group: "upstream", icon: "boxes" },
+      plm: { id: "plm", label: "PLM / CAD", sub: "Variants · geometry · BIM objects", x: 20, y: 54, w: 13, h: 11, tone: "blue", group: "internal systems", icon: "layers-3" },
+      erp: { id: "erp", label: "ERP / MES", sub: "Production · batch creation", x: 20, y: 8, w: 13, h: 11, tone: "blue", group: "internal systems", icon: "factory" },
+      pim: { id: "pim", label: "PIM", sub: "Product information", x: 20, y: 21, w: 13, h: 11, tone: "blue", group: "internal systems", icon: "building-2" },
+      qms: { id: "qms", label: "QMS / Q-Reg", sub: "Tests · DoP · DoC", x: 20, y: 34, w: 13, h: 11, tone: "blue", group: "internal systems", icon: "file-check-2" },
+      lca: { id: "lca", label: "LCA / EPD", sub: "Environmental impact data", x: 20, y: 47, w: 13, h: 11, tone: "blue", group: "internal systems", icon: "globe" },
+      idhub: { id: "idhub", label: "ID Hub", sub: "Persistent product identifiers", x: 20, y: 67, w: 13, h: 11, tone: "blue", group: "internal systems", icon: "binary" },
+      fabric: { id: "fabric", label: "Microsoft Fabric", sub: "OneLake · pipelines · standardization", x: 39, y: 31, w: 16, h: 16, tone: "emerald", group: "core platform", icon: "network" },
+      package: { id: "package", label: "In-house DPP Database", sub: "Azure SQL / Fabric SQL · full data package", x: 60, y: 31, w: 16, h: 16, tone: "emerald", group: "core platform", icon: "database" },
+      qr: { id: "qr", label: "QR Code Service", sub: "Power Automate / Azure Function", x: 79, y: 9, w: 14, h: 11, tone: "emerald", group: "publication", icon: "qr-code" },
+      backup: { id: "backup", label: "Backup Service Provider", sub: "Redundant long-term host", x: 79, y: 57, w: 14, h: 11, tone: "emerald", group: "publication", icon: "shield-check" },
+      portal: { id: "portal", label: "DOVISTA DPP Portal", sub: "Human-readable passport view", x: 97, y: 31, w: 17, h: 16, tone: "emerald", group: "experience layer", icon: "scan-line" },
+      api: { id: "api", label: "Public API", sub: "JSON / RDF access", x: 97, y: 12, w: 17, h: 11, tone: "emerald", group: "experience layer", icon: "arrow-right" },
+      mobile: { id: "mobile", label: "QR Scan Experience", sub: "Mobile-first access journey", x: 118, y: 31, w: 14, h: 16, tone: "amber", group: "stakeholder access", icon: "smartphone" },
+      users: { id: "users", label: "End-users", sub: "Repair · spare parts · reuse", x: 118, y: 5, w: 14, h: 11, tone: "amber", group: "stakeholder access", icon: "users" },
+      service: { id: "service", label: "Installers / Technicians", sub: "Maintenance and repair view", x: 118, y: 56, w: 14, h: 11, tone: "amber", group: "stakeholder access", icon: "wrench" },
+      bim: { id: "bim", label: "BIM / Digital Twins", sub: "System integration via API", x: 136, y: 5, w: 16, h: 11, tone: "amber", group: "stakeholder access", icon: "network" },
+      eu: { id: "eu", label: "EU DPP Registry", sub: "Registry and market verification", x: 136, y: 37, w: 16, h: 13, tone: "amber", group: "compliance", icon: "shield-check" },
+      authorities: { id: "authorities", label: "Authorities", sub: "CE / CPR verification path", x: 136, y: 56, w: 16, h: 11, tone: "amber", group: "compliance", icon: "shield-check" },
+    };
+
+    const edges = [
+      ["suppliers", "plm", "soft"],
+      ["erp", "fabric", "data"],
+      ["pim", "fabric", "data"],
+      ["qms", "fabric", "data"],
+      ["lca", "fabric", "data"],
+      ["idhub", "fabric", "data"],
+      ["plm", "idhub", "soft"],
+      ["fabric", "package", "data"],
+      ["package", "qr", "data"],
+      ["package", "portal", "data"],
+      ["portal", "api", "soft"],
+      ["package", "backup", "soft"],
+      ["portal", "mobile", "data"],
+      ["portal", "users", "soft"],
+      ["portal", "service", "soft"],
+      ["api", "bim", "data"],
+      ["portal", "eu", "data"],
+      ["eu", "authorities", "soft"],
+    ].map(([from, to, kind]) => ({ id: `${from}-${to}`, from, to, kind }));
+
+    const nodeNarratives = {
+      portal: "This is the presentation layer that turns structured passport content into a credible stakeholder-facing experience.",
+      fabric: "This layer functions as the orchestration and transformation core, consolidating fragmented source inputs into a governed DPP package.",
+      package: "This is the operational source for the publishable passport object and the dependency point for portal, API and registry delivery.",
+      erp: "Production-triggered events create the operational signal that a new DPP package should exist for a specific product or batch.",
+      pim: "Commercial and technical product attributes must be standardized here to ensure consistency across customer-facing publication points.",
+      qms: "Evidence from testing and conformity documentation strengthens trust and supports downstream compliance exposure.",
+      lca: "Environmental data becomes materially more useful when it is resolvable, governed and linked to persistent product identity.",
+      idhub: "Stable identifiers are foundational. Without them, traceability and long-term DPP persistence become fragile across systems.",
+      backup: "A redundant host improves resilience and supports future expectations around persistence, continuity and availability.",
+      users: "The end-user journey is where the DPP stops being architecture and starts becoming actual value.",
+      service: "Technicians need a version of the passport optimized for maintenance, component lookup, and repair decision-making.",
+      mobile: "A mobile-first scan experience matters because QR resolution is likely the most visible front-door into the passport ecosystem.",
+      bim: "Machine-readable access makes the architecture useful beyond compliance by enabling integration into BIM and digital twin workflows.",
+      eu: "Registry and verification pathways are what connect the architecture to future market-access and regulatory mechanisms.",
+      authorities: "Authorities require a verification path, not a marketing page. This edge supports auditable product validation.",
+      suppliers: "Supplier and market inputs influence upstream data quality and can constrain the quality of the downstream passport package.",
+      plm: "PLM contributes design structure, variant logic and model-related information needed for traceable digital continuity.",
+      qr: "QR generation is the physical-digital handoff point that makes the passport discoverable in the real world.",
+      api: "An API layer gives the architecture extensibility and positions the DPP as infrastructure rather than just a web page.",
+    };
+
+    let stepIndex = 0;
+    let selectedNode = "portal";
+    let viewMode = "exec";
+    let playing = true;
+    let playTimer;
+
+    const svg = document.getElementById('edgeSvg');
+    const nodeLayer = document.getElementById('nodeLayer');
+    const stepList = document.getElementById('stepList');
+
+    function pathForEdge(edge) {
+      const from = nodes[edge.from];
+      const to = nodes[edge.to];
+      const x1 = from.x + from.w;
+      const y1 = from.y + from.h / 2;
+      const x2 = to.x;
+      const y2 = to.y + to.h / 2;
+      const midX = (x1 + x2) / 2;
+      return `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
+    }
+
+    function renderEdges() {
+      svg.innerHTML = '';
+      const step = steps[stepIndex];
+      const activeEdges = new Set(step.activeEdges);
+
+      edges.forEach(edge => {
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const active = activeEdges.has(edge.id);
+        const d = pathForEdge(edge);
+        const stroke = active
+          ? 'rgba(16,185,129,0.95)'
+          : edge.kind === 'soft'
+          ? 'rgba(100,116,139,0.45)'
+          : 'rgba(59,130,246,0.45)';
+
+        path.setAttribute('d', d);
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', stroke);
+        path.setAttribute('stroke-width', active ? '.55' : '.36');
+        path.setAttribute('vector-effect', 'non-scaling-stroke');
+        if (!active && activeEdges.size > 0) path.setAttribute('opacity', '.35');
+        svg.appendChild(path);
+      });
+    }
+
+    function renderNodes() {
+      nodeLayer.innerHTML = '';
+      const step = steps[stepIndex];
+      const activeNodes = new Set(step.activeNodes);
+
+      Object.values(nodes).forEach(node => {
+        const el = document.createElement('button');
+        el.className = `node ${node.tone}`;
+        if (activeNodes.size > 0 && !activeNodes.has(node.id)) el.classList.add('dimmed');
+        if (activeNodes.has(node.id)) el.classList.add('active');
+        el.style.left = `${node.x}%`;
+        el.style.top = `${node.y}%`;
+        el.style.width = `${node.w}%`;
+        el.style.height = `${node.h}%`;
+        el.innerHTML = `
+          <div class="node-top">
+            <div class="min-w-0">
+              <div class="node-kicker">${viewMode === 'exec' ? node.group : node.id}</div>
+              <div class="node-title">${node.label}</div>
+            </div>
+            <div class="node-icon"><i data-lucide="${node.icon}" class="h-[18px] w-[18px]"></i></div>
+          </div>
+          <div class="node-sub">${node.sub}</div>
+        `;
+        el.addEventListener('click', () => {
+          selectedNode = node.id;
+          renderDetails();
+        });
+        nodeLayer.appendChild(el);
+      });
+
+      lucide.createIcons();
+    }
+
+    function renderFlowDots() {
+      document.querySelectorAll('.flow-dot, .flow-dot-2').forEach(el => el.remove());
+      const canvasArea = document.getElementById('canvasArea');
+      const step = steps[stepIndex];
+      const activeEdges = new Set(step.activeEdges);
+
+      edges.forEach(edge => {
+        if (!activeEdges.has(edge.id)) return;
+        const path = pathForEdge(edge);
+
+        const dot1 = document.createElement('div');
+        dot1.className = 'flow-dot';
+        dot1.style.offsetPath = `path('${path}')`;
+        dot1.style.animation = 'moveDot 2.2s linear infinite';
+
+        const dot2 = document.createElement('div');
+        dot2.className = 'flow-dot-2';
+        dot2.style.offsetPath = `path('${path}')`;
+        dot2.style.animation = 'moveDot 2.2s linear .35s infinite';
+
+        canvasArea.appendChild(dot1);
+        canvasArea.appendChild(dot2);
+      });
+    }
+
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+      @keyframes moveDot {
+        0% { offset-distance: 0%; opacity: 1; }
+        100% { offset-distance: 100%; opacity: 1; }
+      }
+    `;
+    document.head.appendChild(styleSheet);
+
+    function renderStepCard() {
+      const step = steps[stepIndex];
+      document.getElementById('stepKicker').textContent = `Step ${step.id} of ${steps.length}`;
+      document.getElementById('stepTitle').textContent = step.title;
+      document.getElementById('stepSubtitle').textContent = step.subtitle;
+      document.getElementById('stepDescription').textContent = step.description;
+      document.getElementById('detailStory').textContent = step.description;
+      document.getElementById('phoneLive').style.visibility = step.activeNodes.includes('mobile') || step.activeNodes.includes('portal') ? 'visible' : 'hidden';
+    }
+
+    function renderDetails() {
+      const node = nodes[selectedNode];
+      document.getElementById('detailTitle').textContent = node.label;
+      document.getElementById('detailSub').textContent = node.sub;
+      document.getElementById('detailNarrative').textContent = nodeNarratives[node.id] || '';
+    }
+
+    function renderStepList() {
+      stepList.innerHTML = '';
+      steps.forEach((step, index) => {
+        const btn = document.createElement('button');
+        btn.className = `step-item ${index === stepIndex ? 'active' : ''}`;
+        btn.innerHTML = `
+          <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">${step.id}</div>
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-medium leading-5 text-slate-900">${step.title}</div>
+            <div class="mt-0.5 text-xs text-slate-500">${step.subtitle}</div>
+          </div>
+          <div class="ml-auto text-slate-400">›</div>
+        `;
+        btn.addEventListener('click', () => {
+          stepIndex = index;
+          playing = false;
+          render();
+          updateControls();
+          stopAutoplay();
+        });
+        stepList.appendChild(btn);
+      });
+    }
+
+    function render() {
+      renderEdges();
+      renderNodes();
+      renderFlowDots();
+      renderStepCard();
+      renderDetails();
+      renderStepList();
+    }
+
+    function stopAutoplay() {
+      clearInterval(playTimer);
+    }
+
+    function startAutoplay() {
+      stopAutoplay();
+      playTimer = setInterval(() => {
+        if (!playing) return;
+        stepIndex = (stepIndex + 1) % steps.length;
+        render();
+      }, 2800);
+    }
+
+    function updateControls() {
+      document.getElementById('playBtn').textContent = playing ? 'Pause' : 'Play';
+      document.getElementById('execBtn').classList.toggle('active', viewMode === 'exec');
+      document.getElementById('techBtn').classList.toggle('active', viewMode === 'tech');
+    }
+
+    document.getElementById('playBtn').addEventListener('click', () => {
+      playing = !playing;
+      updateControls();
+      if (playing) startAutoplay(); else stopAutoplay();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      stepIndex = 0;
+      playing = false;
+      render();
+      updateControls();
+      stopAutoplay();
+    });
+
+    document.getElementById('execBtn').addEventListener('click', () => {
+      viewMode = 'exec';
+      updateControls();
+      renderNodes();
+    });
+
+    document.getElementById('techBtn').addEventListener('click', () => {
+      viewMode = 'tech';
+      updateControls();
+      renderNodes();
+    });
+
+    render();
+    updateControls();
+    startAutoplay();
+  </script>
+</body>
+</html>
