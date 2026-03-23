@@ -1,448 +1,93 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DOVISTA DPP Architecture Demo</title>
-  <style>
-    :root {
-      --bg-1: #eef3f2;
-      --bg-2: #f7f7f5;
-      --bg-3: #edf2f7;
-      --panel: rgba(255,255,255,0.82);
-      --panel-border: rgba(255,255,255,0.75);
-      --line: #94a3b8;
-      --text: #0f172a;
-      --muted: #64748b;
-      --green: #0f7b55;
-      --green-soft: #e7f7f0;
-      --blue-soft: #eff6ff;
-      --amber-soft: #fffbeb;
-      --rose-soft: #fff1f2;
-      --shadow-lg: 0 26px 80px rgba(15,23,42,0.10);
-      --shadow-md: 0 16px 40px rgba(15,23,42,0.08);
-      --radius-xl: 28px;
-      --radius-lg: 22px;
-      --radius-md: 18px;
+
+    function renderDetails() {
+      const node = nodes[selectedNode];
+      document.getElementById('detailTitle').textContent = node.label;
+      document.getElementById('detailSub').textContent = node.sub;
+      document.getElementById('detailNarrative').textContent = nodeNarratives[node.id] || '';
     }
 
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--text);
-      background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 45%, var(--bg-3) 100%);
-    }
-
-    .page {
-      max-width: 1680px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-
-    .glass {
-      background: var(--panel);
-      border: 1px solid var(--panel-border);
-      backdrop-filter: blur(18px);
-      -webkit-backdrop-filter: blur(18px);
-      box-shadow: var(--shadow-lg);
-    }
-
-    .hero {
-      border-radius: 28px;
-      padding: 24px;
-      margin-bottom: 22px;
-    }
-
-    .hero-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-end;
-      gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .badges {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
-
-    .badge {
-      border-radius: 999px;
-      padding: 7px 12px;
-      font-size: 12px;
-      border: 1px solid #e2e8f0;
-      background: rgba(255,255,255,0.86);
-      color: #475569;
-    }
-
-    .badge.green {
-      border-color: #b7ead5;
-      background: var(--green-soft);
-      color: var(--green);
-    }
-
-    h1 {
-      margin: 0;
-      font-size: clamp(2rem, 3vw, 3rem);
-      line-height: 1.05;
-      letter-spacing: -0.03em;
-    }
-
-    .lede {
-      max-width: 900px;
-      margin-top: 10px;
-      font-size: 15px;
-      line-height: 1.65;
-      color: var(--muted);
-    }
-
-    .controls {
-      display: flex;
-      gap: 12px;
-      align-items: center;
-      flex-wrap: wrap;
-    }
-
-    .toggle {
-      display: inline-flex;
-      gap: 4px;
-      border: 1px solid #e2e8f0;
-      padding: 4px;
-      border-radius: 18px;
-      background: white;
-    }
-
-    .toggle button, .btn {
-      appearance: none;
-      border: 0;
-      cursor: pointer;
-      font: inherit;
-    }
-
-    .toggle button {
-      padding: 9px 12px;
-      border-radius: 14px;
-      background: transparent;
-      color: #475569;
-    }
-
-    .toggle button.active {
-      background: #f1f5f9;
-      color: var(--text);
-      font-weight: 600;
-    }
-
-    .btn {
-      border: 1px solid #e2e8f0;
-      background: white;
-      color: var(--text);
-      border-radius: 18px;
-      padding: 10px 14px;
-    }
-
-    .layout {
-      display: grid;
-      grid-template-columns: minmax(0, 1.28fr) 400px;
-      gap: 22px;
-      align-items: start;
-    }
-
-    .canvas-card {
-      border-radius: 32px;
-      overflow: hidden;
-    }
-
-    .canvas-topbar {
-      padding: 20px 26px;
-      border-bottom: 1px solid #e2e8f0;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
-
-    .eyebrow {
-      font-size: 11px;
-      letter-spacing: .2em;
-      text-transform: uppercase;
-      color: var(--muted);
-    }
-
-    .canvas-title {
-      font-size: 22px;
-      font-weight: 600;
-      margin-top: 4px;
-    }
-
-    .legend {
-      display: flex;
-      gap: 14px;
-      flex-wrap: wrap;
-      color: var(--muted);
-      font-size: 14px;
-    }
-
-    .legend-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 999px;
-      display: inline-block;
-      margin-right: 6px;
-      vertical-align: middle;
-    }
-
-    .canvas-grid {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) 300px;
-      min-height: 760px;
-    }
-
-    .scene-wrap {
-      position: relative;
-      padding: 18px;
-      background:
-        linear-gradient(rgba(148,163,184,0.10) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(148,163,184,0.10) 1px, transparent 1px),
-        radial-gradient(circle at top left, rgba(255,255,255,0.92), rgba(248,250,252,0.96) 50%, rgba(241,245,249,0.96) 100%);
-      background-size: 46px 46px, 46px 46px, auto;
-    }
-
-    .group-labels {
-      position: absolute;
-      inset: 18px 18px auto 18px;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .group-pill {
-      position: absolute;
-      border-radius: 999px;
-      padding: 7px 12px;
-      font-size: 11px;
-      letter-spacing: .16em;
-      text-transform: uppercase;
-      background: rgba(255,255,255,0.92);
-      border: 1px solid #e2e8f0;
-      color: #64748b;
-      box-shadow: 0 4px 20px rgba(15,23,42,0.05);
-    }
-
-    .group-pill.green { background: rgba(231,247,240,0.96); border-color: #b7ead5; color: var(--green); }
-    .group-pill.amber { background: rgba(255,251,235,0.96); border-color: #fde68a; color: #a16207; }
-
-    .scene {
-      width: 100%;
-      height: auto;
-      display: block;
-    }
-
-    .node {
-      cursor: pointer;
-      transition: opacity .22s ease;
-    }
-
-    .node.dimmed { opacity: 0.34; }
-    .node.active .node-body {
-      filter: drop-shadow(0 14px 24px rgba(15,23,42,0.12));
-    }
-
-    .node.active .node-rect {
-      stroke: rgba(16,185,129,0.65);
-      stroke-width: 2;
-    }
-
-    .node.active .pulse {
-      opacity: 1;
-      animation: pulseGlow 1.8s infinite ease-in-out;
-    }
-
-    .node-label-kicker {
-      font-size: 7.6px;
-      letter-spacing: .22em;
-      text-transform: uppercase;
-      fill: #64748b;
-    }
-
-    .node-label-title {
-      font-size: 11.5px;
-      font-weight: 700;
-      fill: #0f172a;
-    }
-
-    .node-label-sub {
-      font-size: 8.6px;
-      fill: #475569;
-    }
-
-    .tech-id {
-      font-size: 7.8px;
-      letter-spacing: .18em;
-      text-transform: uppercase;
-      fill: #64748b;
-    }
-
-    .edge {
-      fill: none;
-      stroke-linecap: round;
-      transition: opacity .2s ease, stroke .2s ease;
-    }
-
-    .edge.dimmed { opacity: 0.22; }
-    .edge.soft { stroke: rgba(100,116,139,0.50); stroke-width: 2.1; }
-    .edge.data { stroke: rgba(59,130,246,0.45); stroke-width: 2.3; }
-    .edge.active { stroke: rgba(16,185,129,0.94); stroke-width: 3; }
-
-    .flow-particle {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .edge.active + .flow-particle,
-    .edge.active + .flow-particle + .flow-particle {
-      opacity: 1;
-    }
-
-    .side-panel {
-      background: linear-gradient(180deg, rgba(255,255,255,0.80), rgba(248,250,252,0.90));
-      border-left: 1px solid #e2e8f0;
-      padding: 22px;
-    }
-
-    .box {
-      border: 1px solid #e2e8f0;
-      background: white;
-      border-radius: 24px;
-      padding: 16px;
-      box-shadow: 0 1px 2px rgba(15,23,42,0.04);
-    }
-
-    .step-list {
-      display: grid;
-      gap: 10px;
-    }
-
-    .step-btn {
-      width: 100%;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      text-align: left;
-      border: 1px solid #e2e8f0;
-      background: white;
-      border-radius: 22px;
-      padding: 12px;
-      cursor: pointer;
-      font: inherit;
-    }
-
-    .step-btn.active {
-      background: #ecfdf5;
-      border-color: #a7f3d0;
-    }
-
-    .step-no {
-      width: 24px;
-      height: 24px;
-      border-radius: 999px;
-      background: #f1f5f9;
-      color: #334155;
-      display: grid;
-      place-items: center;
-      font-size: 12px;
-      font-weight: 700;
-      flex: 0 0 auto;
-      margin-top: 2px;
-    }
-
-    .sidebar-stack {
-      display: grid;
-      gap: 22px;
-    }
-
-    .phone {
-      width: 220px;
-      margin: 0 auto;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 32px;
-      padding: 12px;
-      box-shadow: 0 30px 80px rgba(15,23,42,0.15);
-    }
-
-    .phone-live {
-      animation: pulseTag 1.5s infinite ease-in-out;
-    }
-
-    @keyframes pulseGlow {
-      0%,100% { opacity: .22; transform: scale(1); transform-origin: center; }
-      50% { opacity: .45; transform: scale(1.02); transform-origin: center; }
-    }
-
-    @keyframes pulseTag {
-      0%,100% { transform: scale(1); }
-      50% { transform: scale(1.06); }
-    }
-
-    @media (max-width: 1320px) {
-      .layout { grid-template-columns: 1fr; }
-    }
-
-    @media (max-width: 1100px) {
-      .canvas-grid { grid-template-columns: 1fr; }
-      .side-panel { border-left: 0; border-top: 1px solid #e2e8f0; }
-    }
-  </style>
-</head>
-<body>
-  <div class="page">
-    <section class="hero glass">
-      <div class="hero-row">
-        <div>
-          <div class="badges">
-            <span class="badge green">DOVISTA concept demo</span>
-            <span class="badge">Premium presentation mode</span>
+    function renderStepList() {
+      stepList.innerHTML = '';
+      steps.forEach((step, index) => {
+        const btn = document.createElement('button');
+        btn.className = `step-item ${index === stepIndex ? 'active' : ''}`;
+        btn.innerHTML = `
+          <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">${step.id}</div>
+          <div class="min-w-0 flex-1">
+            <div class="text-sm font-medium leading-5 text-slate-900">${step.title}</div>
+            <div class="mt-0.5 text-xs text-slate-500">${step.subtitle}</div>
           </div>
-          <h1>Digital Product Passport Architecture</h1>
-          <div class="lede">An executive-ready architecture story for internal presentations, combining system landscape, guided data flow, stakeholder access and verification logic.</div>
-        </div>
-        <div class="controls">
-          <div class="toggle">
-            <button id="execBtn" class="active">Executive view</button>
-            <button id="techBtn">Technical view</button>
-          </div>
-          <button id="playBtn" class="btn">Pause</button>
-          <button id="resetBtn" class="btn">Reset</button>
-        </div>
-      </div>
-    </section>
+          <div class="ml-auto text-slate-400">›</div>
+        `;
+        btn.addEventListener('click', () => {
+          stepIndex = index;
+          playing = false;
+          render();
+          updateControls();
+          stopAutoplay();
+        });
+        stepList.appendChild(btn);
+      });
+    }
 
-    <div class="layout">
-      <section class="canvas-card glass">
-        <div class="canvas-topbar">
-          <div>
-            <div class="eyebrow">Architecture flow canvas</div>
-            <div class="canvas-title">From product event to passport consumption</div>
-          </div>
-          <div class="legend">
-            <span><span class="legend-dot" style="background:#10b981"></span>Active flow</span>
-            <span><span class="legend-dot" style="background:#cbd5e1"></span>Context links</span>
-          </div>
-        </div>
+    function render() {
+      renderEdges();
+      renderNodes();
+      renderFlowDots();
+      renderStepCard();
+      renderDetails();
+      renderStepList();
+    }
 
-        <div class="canvas-grid">
-          <div class="scene-wrap">
-            <div class="group-labels">
-              <div class="group-pill" style="left:17%;top:1.5%">DOVISTA internal systems</div>
-              <div class="group-pill green" style="left:56%;top:1.5%">In-house DPP platform</div>
-              <div class="group-pill amber" style="right:4%;top:1.5%">Stakeholder access</div>
-            </div>
+    function stopAutoplay() {
+      clearInterval(playTimer);
+    }
 
-            <svg id="scene" class="scene" viewBox="0 0 1200 760" preserveAspectRatio="xMidYMid meet" aria-label="DPP architecture diagram"></svg>
+    function startAutoplay() {
+      stopAutoplay();
+      playTimer = setInterval(() => {
+        if (!playing) return;
+        stepIndex = (stepIndex + 1) % steps.length;
+        render();
+      }, 2800);
+    }
 
-            <div style="position:absolute;left:18px;right:18px;bottom:18px;z-index:2;">
-              <div class="glass" style="border-radius:28px;padding:18px 20px;box-shadow:var(--shadow-md);">
-                <div style
+    function updateControls() {
+      document.getElementById('playBtn').textContent = playing ? 'Pause' : 'Play';
+      document.getElementById('execBtn').classList.toggle('active', viewMode === 'exec');
+      document.getElementById('techBtn').classList.toggle('active', viewMode === 'tech');
+    }
+
+    document.getElementById('playBtn').addEventListener('click', () => {
+      playing = !playing;
+      updateControls();
+      if (playing) startAutoplay(); else stopAutoplay();
+    });
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      stepIndex = 0;
+      playing = false;
+      render();
+      updateControls();
+      stopAutoplay();
+    });
+
+    document.getElementById('execBtn').addEventListener('click', () => {
+      viewMode = 'exec';
+      updateControls();
+      renderNodes();
+    });
+
+    document.getElementById('techBtn').addEventListener('click', () => {
+      viewMode = 'tech';
+      updateControls();
+      renderNodes();
+    });
+
+    render();
+    updateControls();
+    startAutoplay();
+  </script>
+</body>
+</html>
