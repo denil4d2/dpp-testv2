@@ -378,124 +378,94 @@
     const steps = [
       {
         id: 1,
-        title: 'Production event created',
-        subtitle: 'ERP/MES initiates a new passport flow',
+        title: 'Production trigger',
+        subtitle: 'ERP/MES creates the event',
         activeNodes: ['erp', 'fabric'],
         activeEdges: ['erp-fabric'],
-        description: 'A batch or production event is created in ERP/MES. This becomes the operational trigger for downstream DPP packaging and publication.',
+        description: 'A product or batch event is created in ERP/MES and passed into the transformation layer.'
       },
       {
         id: 2,
-        title: 'Source data assembled',
-        subtitle: 'Product, compliance and environmental inputs are standardized',
-        activeNodes: ['pim', 'qms', 'lca', 'idhub', 'fabric', 'plm'],
-        activeEdges: ['pim-fabric', 'qms-fabric', 'lca-fabric', 'idhub-fabric', 'plm-idhub'],
-        description: 'Relevant upstream systems contribute product structure, documentation, environmental data and persistent identifiers into a governed transformation layer.',
+        title: 'Data assembly',
+        subtitle: 'Key sources are standardized',
+        activeNodes: ['sources', 'fabric'],
+        activeEdges: ['sources-fabric'],
+        description: 'Product, compliance, environmental and identifier data are consolidated into a governed package.'
       },
       {
         id: 3,
-        title: 'DPP package persisted',
-        subtitle: 'The publishable package is stored centrally',
-        activeNodes: ['fabric', 'package'],
-        activeEdges: ['fabric-package'],
-        description: 'The standardized DPP package is stored in the in-house data platform so each product or batch can resolve to a coherent, governed data object.',
+        title: 'DPP package created',
+        subtitle: 'Central record is persisted',
+        activeNodes: ['fabric', 'dppdb'],
+        activeEdges: ['fabric-dppdb'],
+        description: 'The in-house DPP database stores the publishable passport object for the product or batch.'
       },
       {
         id: 4,
-        title: 'Identifier and QR generated',
-        subtitle: 'Physical product connects to digital record',
-        activeNodes: ['package', 'qr'],
-        activeEdges: ['package-qr'],
-        description: 'A QR code and persistent product identifier are generated, creating the bridge between the physical unit and its digital passport entry.',
+        title: 'Publication',
+        subtitle: 'Portal and QR are generated',
+        activeNodes: ['dppdb', 'portal'],
+        activeEdges: ['dppdb-portal'],
+        description: 'The passport is exposed through a DPP portal and linked to the physical product via QR.'
       },
       {
         id: 5,
-        title: 'Portal and API published',
-        subtitle: 'Human-readable and machine-readable access exposed',
-        activeNodes: ['package', 'portal', 'api'],
-        activeEdges: ['package-portal', 'portal-api'],
-        description: 'The portal publishes a user-facing DPP view while structured outputs are made available for system integration and downstream digital use cases.',
-      },
-      {
-        id: 6,
-        title: 'Use, service and verification',
-        subtitle: 'Stakeholders access the passport through different views',
-        activeNodes: ['portal', 'mobile', 'users', 'service', 'bim', 'eu', 'authorities', 'backup'],
-        activeEdges: ['portal-mobile', 'portal-users', 'portal-service', 'api-bim', 'portal-eu', 'eu-authorities', 'package-backup'],
-        description: 'End-users, service technicians, BIM environments and authorities consume the passport through tailored access paths, while backup hosting supports resilience.',
-      },
+        title: 'Consumption and verification',
+        subtitle: 'Users and authorities access the passport',
+        activeNodes: ['portal', 'access'],
+        activeEdges: ['portal-access'],
+        description: 'End-users, service teams, BIM workflows and authorities consume the passport through different views.'
+      }
     ];
 
     const nodes = {
-      suppliers:  { id: 'suppliers', label: 'Suppliers & Market Inputs', sub: 'Supplier portals · specifications · project requirements', x: 45,   y: 360, w: 190, h: 125, tone: 'rose',    group: 'upstream' },
-      erp:        { id: 'erp',       label: 'ERP / MES',                sub: 'Production · batch creation',                               x: 300,  y: 125, w: 170, h: 95,  tone: 'blue',    group: 'internal systems' },
-      pim:        { id: 'pim',       label: 'PIM',                      sub: 'Product information',                                       x: 300,  y: 245, w: 170, h: 95,  tone: 'blue',    group: 'internal systems' },
-      qms:        { id: 'qms',       label: 'QMS / Q-Reg',              sub: 'Tests · DoP · DoC',                                         x: 300,  y: 365, w: 170, h: 95,  tone: 'blue',    group: 'internal systems' },
-      lca:        { id: 'lca',       label: 'LCA / EPD',                sub: 'Environmental impact data',                                 x: 300,  y: 485, w: 170, h: 95,  tone: 'blue',    group: 'internal systems' },
-      plm:        { id: 'plm',       label: 'PLM / CAD',                sub: 'Variants · geometry · BIM objects',                         x: 300,  y: 605, w: 170, h: 95,  tone: 'blue',    group: 'internal systems' },
-      idhub:      { id: 'idhub',     label: 'ID Hub',                   sub: 'Persistent product identifiers',                            x: 300,  y: 725, w: 170, h: 95,  tone: 'blue',    group: 'internal systems' },
-      fabric:     { id: 'fabric',    label: 'Microsoft Fabric',         sub: 'OneLake · pipelines · standardization',                     x: 610,  y: 325, w: 230, h: 170, tone: 'emerald', group: 'core platform' },
-      package:    { id: 'package',   label: 'In-house DPP Database',    sub: 'Azure SQL / Fabric SQL · full data package',                x: 900,  y: 325, w: 245, h: 170, tone: 'emerald', group: 'core platform' },
-      qr:         { id: 'qr',        label: 'QR Code Service',          sub: 'Power Automate / Azure Function',                           x: 1145, y: 130, w: 210, h: 95,  tone: 'emerald', group: 'publication' },
-      api:        { id: 'api',       label: 'Public API',               sub: 'JSON / RDF access',                                         x: 1145, y: 245, w: 210, h: 95,  tone: 'emerald', group: 'experience layer' },
-      backup:     { id: 'backup',    label: 'Backup Service Provider',  sub: 'Redundant long-term host',                                  x: 1145, y: 610, w: 210, h: 95,  tone: 'emerald', group: 'publication' },
-      portal:     { id: 'portal',    label: 'DOVISTA DPP Portal',       sub: 'Human-readable passport view',                              x: 1145, y: 365, w: 230, h: 145, tone: 'emerald', group: 'experience layer' },
-      users:      { id: 'users',     label: 'End-users',                sub: 'Repair · spare parts · reuse',                              x: 1385, y: 130, w: 180, h: 95,  tone: 'amber',   group: 'stakeholder access' },
-      mobile:     { id: 'mobile',    label: 'QR Scan Experience',       sub: 'Mobile-first access journey',                               x: 1385, y: 260, w: 180, h: 145, tone: 'amber',   group: 'stakeholder access' },
-      service:    { id: 'service',   label: 'Installers / Technicians', sub: 'Maintenance and repair view',                               x: 1385, y: 430, w: 180, h: 95,  tone: 'amber',   group: 'stakeholder access' },
-      bim:        { id: 'bim',       label: 'BIM / Digital Twins',      sub: 'System integration via API',                                x: 1385, y: 560, w: 180, h: 95,  tone: 'amber',   group: 'stakeholder access' },
-      eu:         { id: 'eu',        label: 'EU DPP Registry',          sub: 'Registry and market verification',                          x: 1385, y: 690, w: 180, h: 110, tone: 'amber',   group: 'compliance' },
-      authorities:{ id: 'authorities',label:'Authorities',              sub: 'CE / CPR verification path',                                x: 1590, y: 705, w: 170, h: 95,  tone: 'amber',   group: 'compliance' },
+      erp: {
+        id: 'erp', label: 'ERP / MES', sub: 'Production event · batch trigger',
+        x: 110, y: 210, w: 220, h: 110, tone: 'blue', group: 'internal systems'
+      },
+      sources: {
+        id: 'sources', label: 'Core source data', sub: 'PIM · QMS · LCA/EPD · ID hub',
+        x: 110, y: 470, w: 220, h: 120, tone: 'blue', group: 'internal systems'
+      },
+      fabric: {
+        id: 'fabric', label: 'Microsoft Fabric', sub: 'Transform · standardize · orchestrate',
+        x: 470, y: 340, w: 260, h: 140, tone: 'emerald', group: 'core platform'
+      },
+      dppdb: {
+        id: 'dppdb', label: 'In-house DPP database', sub: 'Governed passport package',
+        x: 860, y: 340, w: 260, h: 140, tone: 'emerald', group: 'core platform'
+      },
+      portal: {
+        id: 'portal', label: 'DOVISTA DPP portal', sub: 'QR-linked passport experience',
+        x: 1250, y: 340, w: 250, h: 140, tone: 'emerald', group: 'publication'
+      },
+      access: {
+        id: 'access', label: 'Stakeholder access', sub: 'Users · Service · BIM · Authorities',
+        x: 1250, y: 130, w: 250, h: 120, tone: 'amber', group: 'consumption'
+      }
     };
 
     const edges = [
-      ['suppliers','plm','soft'],
-      ['erp','fabric','data'],
-      ['pim','fabric','data'],
-      ['qms','fabric','data'],
-      ['lca','fabric','data'],
-      ['idhub','fabric','data'],
-      ['plm','idhub','soft'],
-      ['fabric','package','data'],
-      ['package','qr','data'],
-      ['package','api','soft'],
-      ['package','portal','data'],
-      ['package','backup','soft'],
-      ['portal','users','soft'],
-      ['portal','mobile','data'],
-      ['portal','service','soft'],
-      ['api','bim','data'],
-      ['portal','eu','data'],
-      ['eu','authorities','soft'],
-    ].map(([from,to,kind]) => ({ id: `${from}-${to}`, from, to, kind }));
+      { id: 'erp-fabric', from: 'erp', to: 'fabric', kind: 'data' },
+      { id: 'sources-fabric', from: 'sources', to: 'fabric', kind: 'data' },
+      { id: 'fabric-dppdb', from: 'fabric', to: 'dppdb', kind: 'data' },
+      { id: 'dppdb-portal', from: 'dppdb', to: 'portal', kind: 'data' },
+      { id: 'portal-access', from: 'portal', to: 'access', kind: 'soft' }
+    ];
 
     const nodeNarratives = {
-      portal: 'This is the presentation layer that turns structured passport content into a credible stakeholder-facing experience.',
-      fabric: 'This layer functions as the orchestration and transformation core, consolidating fragmented source inputs into a governed DPP package.',
-      package: 'This is the operational source for the publishable passport object and the dependency point for portal, API and registry delivery.',
-      erp: 'Production-triggered events create the operational signal that a new DPP package should exist for a specific product or batch.',
-      pim: 'Commercial and technical product attributes must be standardized here to ensure consistency across customer-facing publication points.',
-      qms: 'Evidence from testing and conformity documentation strengthens trust and supports downstream compliance exposure.',
-      lca: 'Environmental data becomes materially more useful when it is resolvable, governed and linked to persistent product identity.',
-      idhub: 'Stable identifiers are foundational. Without them, traceability and long-term DPP persistence become fragile across systems.',
-      backup: 'A redundant host improves resilience and supports future expectations around persistence, continuity and availability.',
-      users: 'The end-user journey is where the DPP stops being architecture and starts becoming actual value.',
-      service: 'Technicians need a version of the passport optimized for maintenance, component lookup, and repair decision-making.',
-      mobile: 'A mobile-first scan experience matters because QR resolution is likely the most visible front-door into the passport ecosystem.',
-      bim: 'Machine-readable access makes the architecture useful beyond compliance by enabling integration into BIM and digital twin workflows.',
-      eu: 'Registry and verification pathways are what connect the architecture to future market-access and regulatory mechanisms.',
-      authorities: 'Authorities require a verification path, not a marketing page. This edge supports auditable product validation.',
-      suppliers: 'Supplier and market inputs influence upstream data quality and can constrain the quality of the downstream passport package.',
-      plm: 'PLM contributes design structure, variant logic and model-related information needed for traceable digital continuity.',
-      qr: 'QR generation is the physical-digital handoff point that makes the passport discoverable in the real world.',
-      api: 'An API layer gives the architecture extensibility and positions the DPP as infrastructure rather than just a web page.',
+      erp: 'This is the operational trigger point where a new product or batch event enters the passport flow.',
+      sources: 'These are the supporting data domains that enrich the passport with product, compliance, sustainability and identity information.',
+      fabric: 'This layer consolidates fragmented inputs into one structured, governable DPP package.',
+      dppdb: 'This is the operational source of truth for the publishable passport object.',
+      portal: 'This is the public-facing resolution point that turns the structured package into a usable digital experience.',
+      access: 'This is where the architecture becomes valuable for real users, service teams, BIM systems and verification stakeholders.'
     };
 
     const toneStyles = {
       blue:    { fill: '#eff6ff', stroke: '#bfdbfe' },
       emerald: { fill: '#ecfdf5', stroke: '#a7f3d0' },
-      amber:   { fill: '#fffbeb', stroke: '#fde68a' },
-      rose:    { fill: '#fff1f2', stroke: '#fecdd3' },
+      amber:   { fill: '#fffbeb', stroke: '#fde68a' }
     };
 
     let stepIndex = 0;
@@ -509,48 +479,16 @@
     const dotLayer = document.getElementById('dotLayer');
     const stepList = document.getElementById('stepList');
 
-    function centerRight(node) { return { x: node.x + node.w, y: node.y + node.h / 2 }; }
-    function centerLeft(node)  { return { x: node.x, y: node.y + node.h / 2 }; }
-
-    function pathForEdge(edge) {
-      const from = nodes[edge.from];
-      const to = nodes[edge.to];
-      const p1 = centerRight(from);
-      const p2 = centerLeft(to);
-      const dx = p2.x - p1.x;
-      const c = Math.max(70, Math.min(160, dx * 0.42));
-      return `M ${p1.x} ${p1.y} C ${p1.x + c} ${p1.y}, ${p2.x - c} ${p2.y}, ${p2.x} ${p2.y}`;
-    }
-
     function svgEl(tag, attrs = {}) {
       const el = document.createElementNS(NS, tag);
       Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
       return el;
     }
 
-    function renderEdges() {
-      edgeLayer.innerHTML = '';
-      const active = new Set(steps[stepIndex].activeEdges);
-
-      edges.forEach(edge => {
-        const pathD = pathForEdge(edge);
-        const color = edge.kind === 'soft' ? '#94a3b8' : '#60a5fa';
-        const isActive = active.has(edge.id);
-
-        const glow = svgEl('path', {
-          d: pathD,
-          class: `edge-glow ${isActive ? 'active' : ''}`,
-          stroke: '#10b981'
-        });
-        edgeLayer.appendChild(glow);
-
-        const base = svgEl('path', {
-          d: pathD,
-          class: `edge-base ${!isActive && active.size ? 'dimmed' : ''}`,
-          stroke: isActive ? '#10b981' : color
-        });
-        edgeLayer.appendChild(base);
-      });
+    function iconType(id) {
+      return {
+        erp: 'factory', sources: 'database', fabric: 'network', dppdb: 'database', portal: 'qr', access: 'users'
+      }[id] || 'database';
     }
 
     function addIcon(group, x, y, type) {
@@ -561,94 +499,123 @@
       } else if (type === 'database') {
         g.append(svgEl('ellipse', { cx: '11', cy: '5', rx: '7', ry: '3' }));
         g.append(svgEl('path', { d: 'M4 5v10c0 1.7 3.1 3 7 3s7-1.3 7-3V5M4 10c0 1.7 3.1 3 7 3s7-1.3 7-3' }));
-      } else if (type === 'qr') {
-        g.append(svgEl('rect', { x: '2', y: '2', width: '6', height: '6' }));
-        g.append(svgEl('rect', { x: '14', y: '2', width: '6', height: '6' }));
-        g.append(svgEl('rect', { x: '2', y: '14', width: '6', height: '6' }));
-        g.append(svgEl('path', { d: 'M12 12h2v2h-2zM16 12h4M12 16h2M16 16h2v2' }));
-      } else if (type === 'shield') {
-        g.append(svgEl('path', { d: 'M11 2l7 3v5c0 5-3 8-7 10-4-2-7-5-7-10V5l7-3zM8 11l2 2 4-4' }));
-      } else if (type === 'users') {
-        g.append(svgEl('path', { d: 'M7 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM15.5 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM2.5 19a5.5 5.5 0 0 1 9 0M12 19a4.5 4.5 0 0 1 7 0' }));
       } else if (type === 'network') {
         g.append(svgEl('circle', { cx: '5', cy: '5', r: '2' }));
         g.append(svgEl('circle', { cx: '17', cy: '5', r: '2' }));
         g.append(svgEl('circle', { cx: '11', cy: '17', r: '2' }));
         g.append(svgEl('path', { d: 'M7 6.2l2.5 7M15 6.2l-2.5 7M7 5h8' }));
-      } else if (type === 'boxes') {
-        g.append(svgEl('path', { d: 'M3 7l8-4 8 4-8 4-8-4zM3 7v8l8 4 8-4V7' }));
-      } else if (type === 'layers') {
-        g.append(svgEl('path', { d: 'M11 3l8 4-8 4-8-4 8-4zM3 12l8 4 8-4M3 17l8 4 8-4' }));
-      } else if (type === 'building') {
-        g.append(svgEl('path', { d: 'M4 20V4h10v16M4 20h16M9 8h1M9 12h1M9 16h1M14 12h2M14 16h2' }));
-      } else if (type === 'file') {
-        g.append(svgEl('path', { d: 'M6 2h8l4 4v14H6zM14 2v4h4M8 13l2 2 4-4' }));
-      } else if (type === 'globe') {
-        g.append(svgEl('circle', { cx: '11', cy: '11', r: '8' }));
-        g.append(svgEl('path', { d: 'M3 11h16M11 3a13 13 0 0 1 0 16M11 3a13 13 0 0 0 0 16' }));
-      } else if (type === 'binary') {
-        g.append(svgEl('text', { x: '3', y: '10', fill: stroke, 'font-size': '7', 'font-family': 'monospace' })).textContent = '01';
-        g.append(svgEl('text', { x: '3', y: '18', fill: stroke, 'font-size': '7', 'font-family': 'monospace' })).textContent = '10';
-      } else if (type === 'phone') {
-        g.append(svgEl('rect', { x: '6', y: '2', width: '10', height: '20', rx: '3' }));
-        g.append(svgEl('circle', { cx: '11', cy: '18', r: '1' }));
-      } else if (type === 'wrench') {
-        g.append(svgEl('path', { d: 'M14 4a4 4 0 0 0-4 5L4 15l3 3 6-6a4 4 0 0 0 5-4l-4 1-2-2 1-3z' }));
-      } else if (type === 'arrow') {
-        g.append(svgEl('path', { d: 'M4 11h14M12 7l6 4-6 4' }));
+      } else if (type === 'qr') {
+        g.append(svgEl('rect', { x: '2', y: '2', width: '6', height: '6' }));
+        g.append(svgEl('rect', { x: '14', y: '2', width: '6', height: '6' }));
+        g.append(svgEl('rect', { x: '2', y: '14', width: '6', height: '6' }));
+        g.append(svgEl('path', { d: 'M12 12h2v2h-2zM16 12h4M12 16h2M16 16h2v2' }));
+      } else if (type === 'users') {
+        g.append(svgEl('path', { d: 'M7 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM15.5 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM2.5 19a5.5 5.5 0 0 1 9 0M12 19a4.5 4.5 0 0 1 7 0' }));
       }
       group.appendChild(g);
     }
 
-    function iconType(id) {
-      return {
-        suppliers: 'boxes', plm: 'layers', erp: 'factory', pim: 'building', qms: 'file', lca: 'globe', idhub: 'binary',
-        fabric: 'network', package: 'database', qr: 'qr', api: 'arrow', backup: 'shield', portal: 'qr', users: 'users',
-        mobile: 'phone', service: 'wrench', bim: 'network', eu: 'shield', authorities: 'shield'
-      }[id] || 'database';
+    function pathForEdge(edge) {
+      const from = nodes[edge.from];
+      const to = nodes[edge.to];
+      const x1 = from.x + from.w;
+      const y1 = from.y + from.h / 2;
+      const x2 = to.x;
+      const y2 = to.y + to.h / 2;
+      const dx = x2 - x1;
+      const c = Math.max(80, Math.min(150, dx * 0.45));
+      return `M ${x1} ${y1} C ${x1 + c} ${y1}, ${x2 - c} ${y2}, ${x2} ${y2}`;
+    }
+
+    function renderEdges() {
+      edgeLayer.innerHTML = '';
+      const active = new Set(steps[stepIndex].activeEdges);
+      edges.forEach(edge => {
+        const d = pathForEdge(edge);
+        const isActive = active.has(edge.id);
+        const color = isActive ? '#10b981' : edge.kind === 'soft' ? '#94a3b8' : '#60a5fa';
+
+        const glow = svgEl('path', {
+          d,
+          class: `edge-glow ${isActive ? 'active' : ''}`,
+          stroke: '#10b981'
+        });
+        edgeLayer.appendChild(glow);
+
+        const path = svgEl('path', {
+          d,
+          class: `edge-base ${!isActive && active.size ? 'dimmed' : ''}`,
+          stroke: color
+        });
+        edgeLayer.appendChild(path);
+      });
+    }
+
+    function renderDots() {
+      dotLayer.innerHTML = '';
+      const active = new Set(steps[stepIndex].activeEdges);
+      edges.forEach(edge => {
+        if (!active.has(edge.id)) return;
+        const d = pathForEdge(edge);
+
+        const dot1 = svgEl('circle', { class: 'flow-dot active', r: '5', fill: '#ffffff', stroke: '#10b981', 'stroke-width': '2' });
+        dot1.appendChild(svgEl('animateMotion', { dur: '2.1s', repeatCount: 'indefinite', path: d }));
+        dotLayer.appendChild(dot1);
+
+        const dot2 = svgEl('circle', { class: 'flow-dot active', r: '3.5', fill: '#10b981' });
+        dot2.appendChild(svgEl('animateMotion', { dur: '2.1s', begin: '0.35s', repeatCount: 'indefinite', path: d }));
+        dotLayer.appendChild(dot2);
+      });
+    }
+
+    function wrapText(text, limit) {
+      const words = text.split(' ');
+      const lines = [];
+      let line = '';
+      words.forEach(word => {
+        const test = line ? `${line} ${word}` : word;
+        if (test.length > limit) {
+          if (line) lines.push(line);
+          line = word;
+        } else {
+          line = test;
+        }
+      });
+      if (line) lines.push(line);
+      return lines.slice(0, 2);
     }
 
     function renderNodes() {
       nodeLayer.innerHTML = '';
       const activeNodes = new Set(steps[stepIndex].activeNodes);
-
       Object.values(nodes).forEach(node => {
         const g = svgEl('g', {
           class: `node-card ${activeNodes.size && !activeNodes.has(node.id) ? 'dimmed' : ''} ${activeNodes.has(node.id) ? 'active floating' : ''}`,
           transform: `translate(${node.x},${node.y})`
         });
-
         const { fill, stroke } = toneStyles[node.tone];
-        const box = svgEl('rect', {
-          class: 'box',
-          width: node.w,
-          height: node.h,
-          rx: '22',
-          fill,
-          stroke,
-          filter: activeNodes.has(node.id) ? 'url(#activeShadow)' : 'url(#softShadow)'
-        });
-        g.appendChild(box);
 
-        const kicker = svgEl('text', {
-          x: '18', y: '20', 'font-size': '10', 'letter-spacing': '2.1', 'text-transform': 'uppercase', fill: '#64748b'
-        });
+        g.appendChild(svgEl('rect', {
+          class: 'box', width: node.w, height: node.h, rx: '22', fill, stroke,
+          filter: activeNodes.has(node.id) ? 'url(#activeShadow)' : 'url(#softShadow)'
+        }));
+
+        const kicker = svgEl('text', { x: '18', y: '20', 'font-size': '10', 'letter-spacing': '2.1', fill: '#64748b' });
         kicker.textContent = viewMode === 'exec' ? node.group.toUpperCase() : node.id.toUpperCase();
         g.appendChild(kicker);
 
-        const title = svgEl('text', { x: '18', y: '42', 'font-size': '20', 'font-weight': '600', fill: '#0f172a' });
+        const title = svgEl('text', { x: '18', y: '44', 'font-size': '18', 'font-weight': '600', fill: '#0f172a' });
         title.textContent = node.label;
         g.appendChild(title);
 
-        const subLines = wrapText(node.sub, 26);
-        subLines.forEach((line, i) => {
-          const sub = svgEl('text', { x: '18', y: String(node.h - 22 - ((subLines.length - 1 - i) * 16)), 'font-size': '13', fill: '#475569' });
-          sub.textContent = line;
-          g.appendChild(sub);
+        const lines = wrapText(node.sub, 28);
+        lines.forEach((line, i) => {
+          const t = svgEl('text', { x: '18', y: String(76 + i * 18), 'font-size': '13', fill: '#475569' });
+          t.textContent = line;
+          g.appendChild(t);
         });
 
-        const iconBg = svgEl('rect', { x: String(node.w - 50), y: '14', width: '34', height: '34', rx: '12', class: 'icon-bg' });
-        g.appendChild(iconBg);
+        g.appendChild(svgEl('rect', { x: String(node.w - 50), y: '14', width: '34', height: '34', rx: '12', class: 'icon-bg' }));
         addIcon(g, node.w - 43, 20, iconType(node.id));
 
         g.addEventListener('click', () => {
@@ -659,40 +626,6 @@
       });
     }
 
-    function wrapText(text, limit) {
-      const words = text.split(' ');
-      const lines = [];
-      let line = '';
-      words.forEach(word => {
-        const test = line ? `${line} ${word}` : word;
-        if (test.length > limit) { lines.push(line); line = word; } else { line = test; }
-      });
-      if (line) lines.push(line);
-      return lines.slice(0, 2);
-    }
-
-    function renderDots() {
-      dotLayer.innerHTML = '';
-      const active = new Set(steps[stepIndex].activeEdges);
-
-      edges.forEach(edge => {
-        if (!active.has(edge.id)) return;
-        const pathD = pathForEdge(edge);
-        const hiddenPath = svgEl('path', { id: `motion-${edge.id}`, d: pathD, fill: 'none', stroke: 'none' });
-        dotLayer.appendChild(hiddenPath);
-
-        const dot1 = svgEl('circle', { class: 'flow-dot active', r: '5', fill: '#ffffff', stroke: '#10b981', 'stroke-width': '2' });
-        const m1 = svgEl('animateMotion', { dur: '2.2s', repeatCount: 'indefinite', path: pathD });
-        dot1.appendChild(m1);
-        dotLayer.appendChild(dot1);
-
-        const dot2 = svgEl('circle', { class: 'flow-dot active', r: '3.5', fill: '#10b981' });
-        const m2 = svgEl('animateMotion', { dur: '2.2s', begin: '0.35s', repeatCount: 'indefinite', path: pathD });
-        dot2.appendChild(m2);
-        dotLayer.appendChild(dot2);
-      });
-    }
-
     function renderStepCard() {
       const step = steps[stepIndex];
       document.getElementById('stepKicker').textContent = `Step ${step.id} of ${steps.length}`;
@@ -700,7 +633,7 @@
       document.getElementById('stepSubtitle').textContent = step.subtitle;
       document.getElementById('stepDescription').textContent = step.description;
       document.getElementById('detailStory').textContent = step.description;
-      document.getElementById('phoneLive').style.visibility = (step.activeNodes.includes('mobile') || step.activeNodes.includes('portal')) ? 'visible' : 'hidden';
+      document.getElementById('phoneLive').style.visibility = step.activeNodes.includes('portal') || step.activeNodes.includes('access') ? 'visible' : 'hidden';
     }
 
     function renderDetails() {
