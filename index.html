@@ -3,724 +3,157 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DOVISTA DPP Architecture Demo</title>
-  <script src="https://cdn.tailwindcss.com"></script>
+  <title>Animated Mermaid DPP</title>
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: "base",
+      themeVariables: {
+        primaryColor: "#ecfdf5",
+        primaryBorderColor: "#86efac",
+        primaryTextColor: "#0f172a",
+        lineColor: "#94a3b8",
+        secondaryColor: "#eff6ff",
+        tertiaryColor: "#fffbeb",
+        fontFamily: "Inter, Arial, sans-serif"
+      },
+      flowchart: {
+        curve: "basis"
+      }
+    });
+
+    window.addEventListener("DOMContentLoaded", async () => {
+      await mermaid.run();
+
+      const svg = document.querySelector("#diagram svg");
+      if (!svg) return;
+
+      const edgePaths = [...svg.querySelectorAll(".edgePath path")];
+      const nodes = [...svg.querySelectorAll(".node")];
+
+      edgePaths.forEach((p) => {
+        const len = p.getTotalLength();
+        p.style.strokeDasharray = `${len * 0.18} ${len * 0.12}`;
+        p.style.animation = "flow 3s linear infinite";
+      });
+
+      let current = 0;
+      const sequence = [
+        { edgeIndexes: [0], nodeIndexes: [0, 2] },
+        { edgeIndexes: [1, 2, 3, 4], nodeIndexes: [1, 2] },
+        { edgeIndexes: [5], nodeIndexes: [2, 3] },
+        { edgeIndexes: [6], nodeIndexes: [3, 4] },
+        { edgeIndexes: [7, 8], nodeIndexes: [4, 5] }
+      ];
+
+      function clearActive() {
+        edgePaths.forEach((p) => p.classList.remove("active-edge"));
+        nodes.forEach((n) => n.classList.remove("active-node"));
+      }
+
+      function playStep(step) {
+        clearActive();
+        step.edgeIndexes.forEach(i => edgePaths[i]?.classList.add("active-edge"));
+        step.nodeIndexes.forEach(i => nodes[i]?.classList.add("active-node"));
+      }
+
+      playStep(sequence[current]);
+
+      setInterval(() => {
+        current = (current + 1) % sequence.length;
+        playStep(sequence[current]);
+      }, 2200);
+    });
+  </script>
+
   <style>
-    :root {
-      --bg-1: #eef3f2;
-      --bg-2: #f7f7f5;
-      --bg-3: #edf2f7;
-      --slate-950: #0f172a;
-      --slate-700: #334155;
-      --slate-600: #475569;
-      --slate-500: #64748b;
-      --slate-300: #cbd5e1;
-      --slate-200: #e2e8f0;
-      --white: #ffffff;
-      --emerald-700: #047857;
-      --emerald-600: #059669;
-      --emerald-200: #a7f3d0;
-      --emerald-100: #d1fae5;
-      --emerald-50: #ecfdf5;
-      --blue-200: #bfdbfe;
-      --blue-50: #eff6ff;
-      --amber-200: #fde68a;
-      --amber-50: #fffbeb;
-      --rose-200: #fecdd3;
-      --rose-50: #fff1f2;
-      --shadow-lg: 0 20px 70px rgba(15, 23, 42, 0.08);
-      --shadow-xl: 0 30px 90px rgba(15, 23, 42, 0.10);
-      --shadow-node: 0 12px 30px rgba(15, 23, 42, 0.08);
-      --shadow-active: 0 18px 45px rgba(15, 23, 42, 0.12);
-    }
-
     body {
-      background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 42%, var(--bg-3) 100%);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      color: var(--slate-950);
+      font-family: Inter, Arial, sans-serif;
+      background: #f8fafc;
+      margin: 0;
+      padding: 32px;
     }
 
-    .glass {
-      background: rgba(255, 255, 255, 0.78);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.75);
-    }
-
-    .badge-pill {
-      border-radius: 999px;
-      padding: 6px 12px;
-      font-size: 12px;
-      line-height: 1;
-      border: 1px solid var(--slate-200);
-      background: rgba(255,255,255,.82);
-      color: var(--slate-600);
-    }
-
-    .btn {
-      border: 1px solid var(--slate-200);
-      background: white;
-      color: var(--slate-950);
-      border-radius: 18px;
-      padding: 10px 14px;
-      font-size: 14px;
-      cursor: pointer;
-      transition: background .2s ease, transform .15s ease;
-    }
-    .btn:hover { background: #f8fafc; }
-    .btn:active { transform: scale(.98); }
-
-    .toggle {
-      display: inline-flex;
-      border: 1px solid var(--slate-200);
-      background: white;
-      border-radius: 18px;
-      padding: 4px;
-      gap: 4px;
-    }
-    .toggle button {
-      border: 0;
-      background: transparent;
-      padding: 9px 12px;
-      border-radius: 14px;
-      font-size: 14px;
-      cursor: pointer;
-      color: var(--slate-600);
-    }
-    .toggle button.active {
-      background: #f1f5f9;
-      color: var(--slate-950);
-      font-weight: 600;
-    }
-
-    .detail-card, .info-card {
-      border-radius: 24px;
-      border: 1px solid var(--slate-200);
-      background: white;
-      padding: 16px;
-      box-shadow: 0 1px 2px rgba(15,23,42,.04);
-    }
-
-    .step-item {
-      display: flex;
-      gap: 12px;
-      width: 100%;
-      text-align: left;
-      border: 1px solid var(--slate-200);
-      background: white;
-      padding: 12px;
-      border-radius: 22px;
-      cursor: pointer;
-      transition: background .2s ease, border-color .2s ease;
-    }
-    .step-item:hover { background: #f8fafc; }
-    .step-item.active { background: var(--emerald-50); border-color: var(--emerald-200); }
-
-    .phone-shell {
-      width: 220px;
-      border-radius: 32px;
-      border: 1px solid var(--slate-200);
-      background: white;
-      padding: 12px;
-      box-shadow: 0 30px 80px rgba(15,23,42,.15);
+    .wrap {
+      max-width: 1400px;
       margin: 0 auto;
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
     }
 
-    .phone-live { animation: pulseLite 1.6s infinite ease-in-out; }
-    @keyframes pulseLite { 0%,100% { transform: scale(1);} 50% { transform: scale(1.06);} }
-
-    .canvas-wrap {
-      position: relative;
-      min-height: 760px;
-      background: radial-gradient(circle at top left, rgba(255,255,255,0.92), rgba(248,250,252,0.96) 45%, rgba(241,245,249,0.95) 100%);
-      overflow: hidden;
+    #diagram svg {
+      width: 100%;
+      height: auto;
     }
 
-    .canvas-grid {
-      background-image:
-        linear-gradient(to right, rgba(148,163,184,0.10) 1px, transparent 1px),
-        linear-gradient(to bottom, rgba(148,163,184,0.10) 1px, transparent 1px);
-      background-size: 48px 48px;
-      position: absolute;
-      inset: 0;
-      opacity: .45;
-      pointer-events: none;
+    .edgePath path {
+      stroke-width: 2.5px !important;
+      stroke: #cbd5e1 !important;
+      transition: stroke 0.35s ease, filter 0.35s ease, opacity 0.35s ease;
+      opacity: 0.5;
     }
 
-    .step-overlay {
-      position: absolute;
-      left: 24px;
-      right: 24px;
-      bottom: 24px;
-      border-radius: 28px;
-      border: 1px solid rgba(255,255,255,.9);
-      background: rgba(255,255,255,.84);
-      backdrop-filter: blur(16px);
-      box-shadow: 0 20px 60px rgba(15,23,42,.12);
-      transition: opacity .2s ease, transform .2s ease;
+    .active-edge {
+      stroke: #10b981 !important;
+      opacity: 1 !important;
+      filter: drop-shadow(0 0 6px rgba(16,185,129,0.35));
     }
 
-    .svg-chip { fill: rgba(255,255,255,.92); stroke: var(--slate-200); stroke-width: 1; }
-    .svg-chip.emerald { fill: rgba(236,253,245,.95); stroke: var(--emerald-200); }
-    .svg-chip.amber { fill: rgba(255,251,235,.96); stroke: var(--amber-200); }
-
-    .node-card { filter: drop-shadow(0 12px 24px rgba(15,23,42,.08)); cursor: pointer; transition: opacity .2s ease; }
-    .node-card.dimmed { opacity: .33; }
-    .node-card .box {
-      stroke-width: 1.2;
-      rx: 22;
-      ry: 22;
-      transition: transform .2s ease, filter .2s ease, stroke .2s ease, opacity .2s ease;
+    .node rect,
+    .node polygon,
+    .node circle {
+      transition: all 0.35s ease;
     }
-    .node-card .icon-bg { fill: rgba(255,255,255,.9); }
-    .node-card.active .box { filter: drop-shadow(0 10px 26px rgba(15,23,42,.12)); }
-    .node-card.active.floating { animation: floatNode 1.8s infinite ease-in-out; transform-origin: center; }
-    @keyframes floatNode { 0%,100% { transform: translateY(0px);} 50% { transform: translateY(-2px);} }
 
-    .edge-base { fill: none; stroke-linecap: round; stroke-width: 3; transition: opacity .2s ease, stroke .2s ease; }
-    .edge-base.dimmed { opacity: .22; }
-    .edge-glow { fill: none; stroke-linecap: round; stroke-width: 7; opacity: 0; }
-    .edge-glow.active { opacity: .14; }
+    .node.active-node rect,
+    .node.active-node polygon,
+    .node.active-node circle {
+      stroke: #10b981 !important;
+      stroke-width: 2px !important;
+      filter: drop-shadow(0 8px 18px rgba(16,185,129,0.18));
+    }
 
-    .flow-dot { r: 5; opacity: 0; }
-    .flow-dot.active { opacity: 1; }
-
-    @media (max-width: 1280px) {
-      .main-grid, .canvas-cols { grid-template-columns: 1fr; }
-      .canvas-wrap { min-height: 680px; }
+    @keyframes flow {
+      from {
+        stroke-dashoffset: 120;
+      }
+      to {
+        stroke-dashoffset: 0;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="mx-auto max-w-[1700px] p-4 md:p-8">
-    <div class="glass mb-5 rounded-[28px] p-5 shadow-[0_20px_70px_rgba(15,23,42,0.08)] md:p-6">
-      <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <div class="mb-3 flex flex-wrap items-center gap-2">
-            <span class="badge-pill" style="border-color: var(--emerald-200); background: var(--emerald-50); color: var(--emerald-700);">DOVISTA concept demo</span>
-            <span class="badge-pill">Premium presentation mode</span>
-          </div>
-          <h1 class="text-3xl font-semibold tracking-tight md:text-4xl">Digital Product Passport Architecture</h1>
-          <p class="mt-2 max-w-4xl text-sm leading-6 text-slate-600 md:text-[15px]">
-            An executive-ready architecture story for internal presentations, combining system landscape, guided data flow, stakeholder access and verification logic.
-          </p>
-        </div>
-        <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-          <div class="toggle">
-            <button id="execBtn" class="active">Executive view</button>
-            <button id="techBtn">Technical view</button>
-          </div>
-          <div class="flex items-center gap-2">
-            <button id="playBtn" class="btn">Pause</button>
-            <button id="resetBtn" class="btn">Reset</button>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="wrap">
+    <div id="diagram" class="mermaid">
+flowchart LR
 
-    <div class="main-grid grid gap-6 xl:grid-cols-[1.28fr_420px]">
-      <div class="glass overflow-hidden rounded-[32px] shadow-[0_30px_90px_rgba(15,23,42,0.1)]">
-        <div class="border-b border-slate-200/80 px-5 py-4 md:px-7 md:py-5">
-          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-            <div>
-              <div class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Architecture flow canvas</div>
-              <div class="mt-1 text-xl font-semibold text-slate-900">From product event to passport consumption</div>
-            </div>
-            <div class="flex items-center gap-2 text-sm text-slate-500">
-              <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-emerald-500"></span> Active flow</span>
-              <span class="inline-flex items-center gap-2"><span class="h-2.5 w-2.5 rounded-full bg-slate-300"></span> Context links</span>
-            </div>
-          </div>
-        </div>
+  ERP["ERP / MES<br/>Production + batch creation"]
+  SOURCES["Core source data<br/>PIM · QMS · LCA/EPD · ID Hub"]
+  FABRIC["Microsoft Fabric<br/>Transform + standardize"]
+  DB["In-house DPP Database<br/>Governed passport package"]
+  PORTAL["DOVISTA DPP Portal<br/>QR-linked experience"]
+  ACCESS["Stakeholder Access<br/>Users · Service · BIM · Authorities"]
 
-        <div class="canvas-cols grid xl:grid-cols-[1fr_300px]">
-          <div class="canvas-wrap">
-            <div class="canvas-grid"></div>
-            <svg id="architectureSvg" viewBox="0 0 1600 860" class="absolute inset-0 h-full w-full" preserveAspectRatio="xMidYMid meet">
-              <defs>
-                <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="10" stdDeviation="14" flood-color="#0f172a" flood-opacity="0.08" />
-                </filter>
-                <filter id="activeShadow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.13" />
-                </filter>
-                <linearGradient id="bgFade" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stop-color="#ffffff" stop-opacity="0.86" />
-                  <stop offset="100%" stop-color="#f8fafc" stop-opacity="0.88" />
-                </linearGradient>
-              </defs>
+  ERP --> FABRIC
+  SOURCES --> FABRIC
+  FABRIC --> DB
+  DB --> PORTAL
+  PORTAL --> ACCESS
 
-              <g id="zoneChips">
-                <g transform="translate(235,48)">
-                  <rect class="svg-chip" width="250" height="38" rx="19"></rect>
-                  <text x="125" y="24" text-anchor="middle" font-size="12" letter-spacing="2.2" fill="#64748b">DOVISTA INTERNAL SYSTEMS</text>
-                </g>
-                <g transform="translate(760,48)">
-                  <rect class="svg-chip emerald" width="250" height="38" rx="19"></rect>
-                  <text x="125" y="24" text-anchor="middle" font-size="12" letter-spacing="2.2" fill="#047857">IN-HOUSE DPP PLATFORM</text>
-                </g>
-                <g transform="translate(1175,48)">
-                  <rect class="svg-chip amber" width="220" height="38" rx="19"></rect>
-                  <text x="110" y="24" text-anchor="middle" font-size="12" letter-spacing="2.2" fill="#b45309">STAKEHOLDER ACCESS</text>
-                </g>
-              </g>
+  classDef blue fill:#eff6ff,stroke:#93c5fd,color:#0f172a;
+  classDef green fill:#ecfdf5,stroke:#86efac,color:#0f172a;
+  classDef amber fill:#fffbeb,stroke:#fcd34d,color:#0f172a;
 
-              <g id="edgeLayer"></g>
-              <g id="nodeLayer"></g>
-              <g id="dotLayer"></g>
-            </svg>
-
-            <div class="step-overlay p-4 md:p-5">
-              <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div>
-                  <div id="stepKicker" class="mb-1 text-[11px] uppercase tracking-[0.22em] text-emerald-700"></div>
-                  <div id="stepTitle" class="text-lg font-semibold text-slate-900 md:text-xl"></div>
-                  <div id="stepSubtitle" class="mt-1 text-sm text-slate-500"></div>
-                </div>
-                <span class="badge-pill" style="border-color: var(--emerald-200); background: var(--emerald-50); color: var(--emerald-700);">Guided flow</span>
-              </div>
-              <p id="stepDescription" class="mt-3 max-w-4xl text-sm leading-6 text-slate-600 md:text-[15px]"></p>
-            </div>
-          </div>
-
-          <div class="border-t border-slate-200 bg-[linear-gradient(180deg,rgba(255,255,255,0.78),rgba(248,250,252,0.9))] xl:border-l xl:border-t-0">
-            <div class="space-y-5 p-5 md:p-6">
-              <div>
-                <div class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Selected node</div>
-                <div id="detailTitle" class="mt-1 text-xl font-semibold text-slate-900"></div>
-                <div id="detailSub" class="mt-1 text-sm text-slate-500"></div>
-              </div>
-
-              <div class="detail-card">
-                <div class="text-sm font-medium text-slate-900">Narrative</div>
-                <p id="detailNarrative" class="mt-2 text-sm leading-6 text-slate-600"></p>
-              </div>
-
-              <div class="detail-card">
-                <div class="text-sm font-medium text-slate-900">Current story emphasis</div>
-                <p id="detailStory" class="mt-2 text-sm leading-6 text-slate-600"></p>
-              </div>
-
-              <div>
-                <div class="mb-3 text-sm font-medium text-slate-900">Presentation path</div>
-                <div id="stepList" class="space-y-2"></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="space-y-6">
-        <div class="glass rounded-[32px] shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
-          <div class="p-5 md:p-6">
-            <div class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Mobile scan journey</div>
-            <div class="mt-2 text-lg font-semibold text-slate-900">QR to DPP experience</div>
-            <p class="mt-2 text-sm leading-6 text-slate-600">
-              This panel helps sell the concept visually by showing how the architecture resolves into an actual stakeholder touchpoint.
-            </p>
-            <div class="mt-5">
-              <div class="phone-shell">
-                <div class="mx-auto mb-3 h-1.5 w-16 rounded-full bg-slate-300"></div>
-                <div class="overflow-hidden rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#f8fafc,#eef2f7)]">
-                  <div class="border-b border-slate-200 bg-white px-4 py-3">
-                    <div class="text-[11px] uppercase tracking-[0.18em] text-slate-500">Mobile DPP view</div>
-                    <div class="mt-1 text-sm font-semibold text-slate-900">Product Passport</div>
-                  </div>
-                  <div class="p-4">
-                    <div class="rounded-2xl border border-emerald-200 bg-emerald-50 p-3">
-                      <div class="text-xs text-slate-500">Resolved ID</div>
-                      <div class="mt-1 text-sm font-semibold text-slate-900">dpp/{id}</div>
-                    </div>
-                    <div class="mt-3 grid grid-cols-2 gap-2">
-                      <div class="rounded-2xl border border-slate-200 bg-white p-3">
-                        <div class="text-[11px] text-slate-500">Documentation</div>
-                        <div class="mt-1 text-xs font-medium text-slate-900">DoP / DoC</div>
-                      </div>
-                      <div class="rounded-2xl border border-slate-200 bg-white p-3">
-                        <div class="text-[11px] text-slate-500">Service</div>
-                        <div class="mt-1 text-xs font-medium text-slate-900">Repair view</div>
-                      </div>
-                    </div>
-                    <div class="mt-3 rounded-2xl border border-slate-200 bg-white p-3">
-                      <div class="flex items-center justify-between">
-                        <div>
-                          <div class="text-[11px] text-slate-500">Scan state</div>
-                          <div class="mt-1 text-sm font-medium text-slate-900">QR resolved successfully</div>
-                        </div>
-                        <div id="phoneLive" class="phone-live rounded-full bg-emerald-500/10 px-2 py-1 text-[11px] font-medium text-emerald-700">Live</div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="glass rounded-[32px] shadow-[0_20px_70px_rgba(15,23,42,0.08)]">
-          <div class="p-5 md:p-6">
-            <div class="text-[11px] uppercase tracking-[0.2em] text-slate-500">Why this version presents better</div>
-            <div class="mt-3 space-y-3 text-sm leading-6 text-slate-600">
-              <p>The architecture is now one SVG scene, so layout and animation remain aligned at every size.</p>
-              <p>Nodes, paths and motion all use one coordinate system instead of mixed HTML and SVG positioning.</p>
-              <p>Active flow is limited and deliberate, which makes it feel more premium and less chaotic.</p>
-              <p>The step narrative still gives you a presenter-friendly story without cluttering the diagram.</p>
-            </div>
-          </div>
-        </div>
-      </div>
+  class ERP,SOURCES blue;
+  class FABRIC,DB,PORTAL green;
+  class ACCESS amber;
     </div>
   </div>
-
-  <script>
-    const NS = 'http://www.w3.org/2000/svg';
-
-    const steps = [
-      {
-        id: 1,
-        title: 'Production trigger',
-        subtitle: 'ERP/MES creates the event',
-        activeNodes: ['erp', 'fabric'],
-        activeEdges: ['erp-fabric'],
-        description: 'A product or batch event is created in ERP/MES and passed into the transformation layer.'
-      },
-      {
-        id: 2,
-        title: 'Data assembly',
-        subtitle: 'Key sources are standardized',
-        activeNodes: ['sources', 'fabric'],
-        activeEdges: ['sources-fabric'],
-        description: 'Product, compliance, environmental and identifier data are consolidated into a governed package.'
-      },
-      {
-        id: 3,
-        title: 'DPP package created',
-        subtitle: 'Central record is persisted',
-        activeNodes: ['fabric', 'dppdb'],
-        activeEdges: ['fabric-dppdb'],
-        description: 'The in-house DPP database stores the publishable passport object for the product or batch.'
-      },
-      {
-        id: 4,
-        title: 'Publication',
-        subtitle: 'Portal and QR are generated',
-        activeNodes: ['dppdb', 'portal'],
-        activeEdges: ['dppdb-portal'],
-        description: 'The passport is exposed through a DPP portal and linked to the physical product via QR.'
-      },
-      {
-        id: 5,
-        title: 'Consumption and verification',
-        subtitle: 'Users and authorities access the passport',
-        activeNodes: ['portal', 'access'],
-        activeEdges: ['portal-access'],
-        description: 'End-users, service teams, BIM workflows and authorities consume the passport through different views.'
-      }
-    ];
-
-    const nodes = {
-      erp: {
-        id: 'erp', label: 'ERP / MES', sub: 'Production event · batch trigger',
-        x: 110, y: 210, w: 220, h: 110, tone: 'blue', group: 'internal systems'
-      },
-      sources: {
-        id: 'sources', label: 'Core source data', sub: 'PIM · QMS · LCA/EPD · ID hub',
-        x: 110, y: 470, w: 220, h: 120, tone: 'blue', group: 'internal systems'
-      },
-      fabric: {
-        id: 'fabric', label: 'Microsoft Fabric', sub: 'Transform · standardize · orchestrate',
-        x: 470, y: 340, w: 260, h: 140, tone: 'emerald', group: 'core platform'
-      },
-      dppdb: {
-        id: 'dppdb', label: 'In-house DPP database', sub: 'Governed passport package',
-        x: 860, y: 340, w: 260, h: 140, tone: 'emerald', group: 'core platform'
-      },
-      portal: {
-        id: 'portal', label: 'DOVISTA DPP portal', sub: 'QR-linked passport experience',
-        x: 1250, y: 340, w: 250, h: 140, tone: 'emerald', group: 'publication'
-      },
-      access: {
-        id: 'access', label: 'Stakeholder access', sub: 'Users · Service · BIM · Authorities',
-        x: 1250, y: 130, w: 250, h: 120, tone: 'amber', group: 'consumption'
-      }
-    };
-
-    const edges = [
-      { id: 'erp-fabric', from: 'erp', to: 'fabric', kind: 'data' },
-      { id: 'sources-fabric', from: 'sources', to: 'fabric', kind: 'data' },
-      { id: 'fabric-dppdb', from: 'fabric', to: 'dppdb', kind: 'data' },
-      { id: 'dppdb-portal', from: 'dppdb', to: 'portal', kind: 'data' },
-      { id: 'portal-access', from: 'portal', to: 'access', kind: 'soft' }
-    ];
-
-    const nodeNarratives = {
-      erp: 'This is the operational trigger point where a new product or batch event enters the passport flow.',
-      sources: 'These are the supporting data domains that enrich the passport with product, compliance, sustainability and identity information.',
-      fabric: 'This layer consolidates fragmented inputs into one structured, governable DPP package.',
-      dppdb: 'This is the operational source of truth for the publishable passport object.',
-      portal: 'This is the public-facing resolution point that turns the structured package into a usable digital experience.',
-      access: 'This is where the architecture becomes valuable for real users, service teams, BIM systems and verification stakeholders.'
-    };
-
-    const toneStyles = {
-      blue:    { fill: '#eff6ff', stroke: '#bfdbfe' },
-      emerald: { fill: '#ecfdf5', stroke: '#a7f3d0' },
-      amber:   { fill: '#fffbeb', stroke: '#fde68a' }
-    };
-
-    let stepIndex = 0;
-    let selectedNode = 'portal';
-    let viewMode = 'exec';
-    let playing = true;
-    let playTimer;
-
-    const edgeLayer = document.getElementById('edgeLayer');
-    const nodeLayer = document.getElementById('nodeLayer');
-    const dotLayer = document.getElementById('dotLayer');
-    const stepList = document.getElementById('stepList');
-
-    function svgEl(tag, attrs = {}) {
-      const el = document.createElementNS(NS, tag);
-      Object.entries(attrs).forEach(([k, v]) => el.setAttribute(k, v));
-      return el;
-    }
-
-    function iconType(id) {
-      return {
-        erp: 'factory', sources: 'database', fabric: 'network', dppdb: 'database', portal: 'qr', access: 'users'
-      }[id] || 'database';
-    }
-
-    function addIcon(group, x, y, type) {
-      const stroke = '#475569';
-      const g = svgEl('g', { transform: `translate(${x},${y})`, 'stroke-width': '1.8', fill: 'none', stroke, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
-      if (type === 'factory') {
-        g.append(svgEl('path', { d: 'M2 18V8l5 3 5-3v10M12 18V5h10v13M4 18h16M16 9h2M16 13h2' }));
-      } else if (type === 'database') {
-        g.append(svgEl('ellipse', { cx: '11', cy: '5', rx: '7', ry: '3' }));
-        g.append(svgEl('path', { d: 'M4 5v10c0 1.7 3.1 3 7 3s7-1.3 7-3V5M4 10c0 1.7 3.1 3 7 3s7-1.3 7-3' }));
-      } else if (type === 'network') {
-        g.append(svgEl('circle', { cx: '5', cy: '5', r: '2' }));
-        g.append(svgEl('circle', { cx: '17', cy: '5', r: '2' }));
-        g.append(svgEl('circle', { cx: '11', cy: '17', r: '2' }));
-        g.append(svgEl('path', { d: 'M7 6.2l2.5 7M15 6.2l-2.5 7M7 5h8' }));
-      } else if (type === 'qr') {
-        g.append(svgEl('rect', { x: '2', y: '2', width: '6', height: '6' }));
-        g.append(svgEl('rect', { x: '14', y: '2', width: '6', height: '6' }));
-        g.append(svgEl('rect', { x: '2', y: '14', width: '6', height: '6' }));
-        g.append(svgEl('path', { d: 'M12 12h2v2h-2zM16 12h4M12 16h2M16 16h2v2' }));
-      } else if (type === 'users') {
-        g.append(svgEl('path', { d: 'M7 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM15.5 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM2.5 19a5.5 5.5 0 0 1 9 0M12 19a4.5 4.5 0 0 1 7 0' }));
-      }
-      group.appendChild(g);
-    }
-
-    function pathForEdge(edge) {
-      const from = nodes[edge.from];
-      const to = nodes[edge.to];
-      const x1 = from.x + from.w;
-      const y1 = from.y + from.h / 2;
-      const x2 = to.x;
-      const y2 = to.y + to.h / 2;
-      const dx = x2 - x1;
-      const c = Math.max(80, Math.min(150, dx * 0.45));
-      return `M ${x1} ${y1} C ${x1 + c} ${y1}, ${x2 - c} ${y2}, ${x2} ${y2}`;
-    }
-
-    function renderEdges() {
-      edgeLayer.innerHTML = '';
-      const active = new Set(steps[stepIndex].activeEdges);
-      edges.forEach(edge => {
-        const d = pathForEdge(edge);
-        const isActive = active.has(edge.id);
-        const color = isActive ? '#10b981' : edge.kind === 'soft' ? '#94a3b8' : '#60a5fa';
-
-        const glow = svgEl('path', {
-          d,
-          class: `edge-glow ${isActive ? 'active' : ''}`,
-          stroke: '#10b981'
-        });
-        edgeLayer.appendChild(glow);
-
-        const path = svgEl('path', {
-          d,
-          class: `edge-base ${!isActive && active.size ? 'dimmed' : ''}`,
-          stroke: color
-        });
-        edgeLayer.appendChild(path);
-      });
-    }
-
-    function renderDots() {
-      dotLayer.innerHTML = '';
-      const active = new Set(steps[stepIndex].activeEdges);
-      edges.forEach(edge => {
-        if (!active.has(edge.id)) return;
-        const d = pathForEdge(edge);
-
-        const dot1 = svgEl('circle', { class: 'flow-dot active', r: '5', fill: '#ffffff', stroke: '#10b981', 'stroke-width': '2' });
-        dot1.appendChild(svgEl('animateMotion', { dur: '2.1s', repeatCount: 'indefinite', path: d }));
-        dotLayer.appendChild(dot1);
-
-        const dot2 = svgEl('circle', { class: 'flow-dot active', r: '3.5', fill: '#10b981' });
-        dot2.appendChild(svgEl('animateMotion', { dur: '2.1s', begin: '0.35s', repeatCount: 'indefinite', path: d }));
-        dotLayer.appendChild(dot2);
-      });
-    }
-
-    function wrapText(text, limit) {
-      const words = text.split(' ');
-      const lines = [];
-      let line = '';
-      words.forEach(word => {
-        const test = line ? `${line} ${word}` : word;
-        if (test.length > limit) {
-          if (line) lines.push(line);
-          line = word;
-        } else {
-          line = test;
-        }
-      });
-      if (line) lines.push(line);
-      return lines.slice(0, 2);
-    }
-
-    function renderNodes() {
-      nodeLayer.innerHTML = '';
-      const activeNodes = new Set(steps[stepIndex].activeNodes);
-      Object.values(nodes).forEach(node => {
-        const g = svgEl('g', {
-          class: `node-card ${activeNodes.size && !activeNodes.has(node.id) ? 'dimmed' : ''} ${activeNodes.has(node.id) ? 'active floating' : ''}`,
-          transform: `translate(${node.x},${node.y})`
-        });
-        const { fill, stroke } = toneStyles[node.tone];
-
-        g.appendChild(svgEl('rect', {
-          class: 'box', width: node.w, height: node.h, rx: '22', fill, stroke,
-          filter: activeNodes.has(node.id) ? 'url(#activeShadow)' : 'url(#softShadow)'
-        }));
-
-        const kicker = svgEl('text', { x: '18', y: '20', 'font-size': '10', 'letter-spacing': '2.1', fill: '#64748b' });
-        kicker.textContent = viewMode === 'exec' ? node.group.toUpperCase() : node.id.toUpperCase();
-        g.appendChild(kicker);
-
-        const title = svgEl('text', { x: '18', y: '44', 'font-size': '18', 'font-weight': '600', fill: '#0f172a' });
-        title.textContent = node.label;
-        g.appendChild(title);
-
-        const lines = wrapText(node.sub, 28);
-        lines.forEach((line, i) => {
-          const t = svgEl('text', { x: '18', y: String(76 + i * 18), 'font-size': '13', fill: '#475569' });
-          t.textContent = line;
-          g.appendChild(t);
-        });
-
-        g.appendChild(svgEl('rect', { x: String(node.w - 50), y: '14', width: '34', height: '34', rx: '12', class: 'icon-bg' }));
-        addIcon(g, node.w - 43, 20, iconType(node.id));
-
-        g.addEventListener('click', () => {
-          selectedNode = node.id;
-          renderDetails();
-        });
-        nodeLayer.appendChild(g);
-      });
-    }
-
-    function renderStepCard() {
-      const step = steps[stepIndex];
-      document.getElementById('stepKicker').textContent = `Step ${step.id} of ${steps.length}`;
-      document.getElementById('stepTitle').textContent = step.title;
-      document.getElementById('stepSubtitle').textContent = step.subtitle;
-      document.getElementById('stepDescription').textContent = step.description;
-      document.getElementById('detailStory').textContent = step.description;
-      document.getElementById('phoneLive').style.visibility = step.activeNodes.includes('portal') || step.activeNodes.includes('access') ? 'visible' : 'hidden';
-    }
-
-    function renderDetails() {
-      const node = nodes[selectedNode];
-      document.getElementById('detailTitle').textContent = node.label;
-      document.getElementById('detailSub').textContent = node.sub;
-      document.getElementById('detailNarrative').textContent = nodeNarratives[node.id] || '';
-    }
-
-    function renderStepList() {
-      stepList.innerHTML = '';
-      steps.forEach((step, index) => {
-        const btn = document.createElement('button');
-        btn.className = `step-item ${index === stepIndex ? 'active' : ''}`;
-        btn.innerHTML = `
-          <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-700">${step.id}</div>
-          <div class="min-w-0 flex-1">
-            <div class="text-sm font-medium leading-5 text-slate-900">${step.title}</div>
-            <div class="mt-0.5 text-xs text-slate-500">${step.subtitle}</div>
-          </div>
-          <div class="ml-auto text-slate-400">›</div>
-        `;
-        btn.addEventListener('click', () => {
-          stepIndex = index;
-          playing = false;
-          renderAll();
-          updateControls();
-          stopAutoplay();
-        });
-        stepList.appendChild(btn);
-      });
-    }
-
-    function renderAll() {
-      renderEdges();
-      renderNodes();
-      renderDots();
-      renderStepCard();
-      renderDetails();
-      renderStepList();
-    }
-
-    function stopAutoplay() { clearInterval(playTimer); }
-    function startAutoplay() {
-      stopAutoplay();
-      playTimer = setInterval(() => {
-        if (!playing) return;
-        stepIndex = (stepIndex + 1) % steps.length;
-        renderAll();
-      }, 2800);
-    }
-
-    function updateControls() {
-      document.getElementById('playBtn').textContent = playing ? 'Pause' : 'Play';
-      document.getElementById('execBtn').classList.toggle('active', viewMode === 'exec');
-      document.getElementById('techBtn').classList.toggle('active', viewMode === 'tech');
-    }
-
-    document.getElementById('playBtn').addEventListener('click', () => {
-      playing = !playing;
-      updateControls();
-      if (playing) startAutoplay(); else stopAutoplay();
-    });
-
-    document.getElementById('resetBtn').addEventListener('click', () => {
-      stepIndex = 0;
-      playing = false;
-      renderAll();
-      updateControls();
-      stopAutoplay();
-    });
-
-    document.getElementById('execBtn').addEventListener('click', () => {
-      viewMode = 'exec';
-      updateControls();
-      renderNodes();
-    });
-
-    document.getElementById('techBtn').addEventListener('click', () => {
-      viewMode = 'tech';
-      updateControls();
-      renderNodes();
-    });
-
-    renderAll();
-    updateControls();
-    startAutoplay();
-  </script>
 </body>
 </html>
