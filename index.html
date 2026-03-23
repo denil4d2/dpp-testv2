@@ -1,317 +1,266 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
+import { motion } from "framer-motion";
+import {
+  Database,
+  Factory,
+  FileCheck2,
+  QrCode,
+  ShieldCheck,
+  Users,
+  Wrench,
+  Building2,
+  Boxes,
+  Layers3,
+  Binary,
+  ScanLine,
+  ArrowRight,
+  HardDrive,
+  Network,
+  Leaf,
+  BadgeCheck,
+} from "lucide-react";
 
-const mermaidCode = String.raw`
-flowchart LR
-  %% Sources
-  S1[Supplier portals\nCO2 / EPD data / chemical info / docs]
-  S2[Partners / Retailers / Specifiers\nproject requirements]
+const nodes = [
+  {
+    id: "suppliers",
+    x: 30,
+    y: 260,
+    w: 170,
+    h: 78,
+    title: "Supplier portals",
+    lines: ["CO₂ / EPD data", "chemical info", "documents"],
+    kind: "source",
+    icon: Leaf,
+  },
+  {
+    id: "partners",
+    x: 30,
+    y: 370,
+    w: 170,
+    h: 78,
+    title: "Partners / retailers",
+    lines: ["specifiers", "project requirements"],
+    kind: "source",
+    icon: Users,
+  },
+  {
+    id: "supplierData",
+    x: 250,
+    y: 292,
+    w: 170,
+    h: 62,
+    title: "Supplier Data",
+    lines: [],
+    kind: "system",
+    icon: Database,
+  },
+  {
+    id: "plmCad",
+    x: 250,
+    y: 392,
+    w: 170,
+    h: 70,
+    title: "PLM / CAD",
+    lines: ["design variants", "BIM objects"],
+    kind: "system",
+    icon: Layers3,
+  },
+  {
+    id: "erpMes",
+    x: 500,
+    y: 110,
+    w: 180,
+    h: 82,
+    title: "ERP / MES",
+    lines: ["production", "batch creation", "Dynamics 365 BC"],
+    kind: "system",
+    icon: Factory,
+  },
+  {
+    id: "pim",
+    x: 500,
+    y: 218,
+    w: 180,
+    h: 72,
+    title: "PIM",
+    lines: ["Product Information", "Management"],
+    kind: "system",
+    icon: Boxes,
+  },
+  {
+    id: "qms",
+    x: 500,
+    y: 320,
+    w: 180,
+    h: 76,
+    title: "QMS / Q-Base",
+    lines: ["test results", "DoP / DoC"],
+    kind: "system",
+    icon: FileCheck2,
+  },
+  {
+    id: "lca",
+    x: 500,
+    y: 432,
+    w: 180,
+    h: 82,
+    title: "LCA Calculation",
+    lines: ["environmental impact", "EPD data"],
+    kind: "system",
+    icon: Leaf,
+  },
+  {
+    id: "idHub",
+    x: 500,
+    y: 540,
+    w: 180,
+    h: 82,
+    title: "ID Hub",
+    lines: ["persistent product IDs", "unique identifier generation"],
+    kind: "system",
+    icon: Binary,
+  },
+  {
+    id: "fabric",
+    x: 830,
+    y: 285,
+    w: 190,
+    h: 96,
+    title: "Microsoft Fabric",
+    lines: ["OneLake + pipelines", "automatic data collection"],
+    kind: "platform",
+    icon: Network,
+    emphasis: true,
+  },
+  {
+    id: "db",
+    x: 1180,
+    y: 290,
+    w: 220,
+    h: 96,
+    title: "In-house DPP Database",
+    lines: ["Azure SQL / Fabric SQL", "full data package per batch"],
+    kind: "platform",
+    icon: Database,
+    emphasis: true,
+  },
+  {
+    id: "qr",
+    x: 1560,
+    y: 70,
+    w: 180,
+    h: 82,
+    title: "QR Code Generator",
+    lines: ["Power Automate", "Azure Function"],
+    kind: "platform",
+    icon: QrCode,
+  },
+  {
+    id: "backup",
+    x: 1560,
+    y: 430,
+    w: 200,
+    h: 92,
+    title: "DPP Service Provider",
+    lines: ["backup", "independent 3rd party", "long-term copy"],
+    kind: "platform",
+    icon: HardDrive,
+  },
+  {
+    id: "portal",
+    x: 1880,
+    y: 285,
+    w: 220,
+    h: 104,
+    title: "DOVISTA DPP Portal",
+    lines: ["portal + API", "human + machine readable"],
+    kind: "platform",
+    icon: ScanLine,
+    emphasis: true,
+  },
+  {
+    id: "bimUsers",
+    x: 2250,
+    y: 120,
+    w: 190,
+    h: 72,
+    title: "BIM users / architects",
+    lines: ["pull data via API into BIM"],
+    kind: "external",
+    icon: Building2,
+  },
+  {
+    id: "bimModels",
+    x: 2520,
+    y: 120,
+    w: 200,
+    h: 72,
+    title: "BIM models / digital twins",
+    lines: [],
+    kind: "external",
+    icon: Boxes,
+  },
+  {
+    id: "endUsers",
+    x: 2250,
+    y: 250,
+    w: 190,
+    h: 80,
+    title: "End-users",
+    lines: ["simple QR view", "repair / spare parts / reuse"],
+    kind: "external-pink",
+    icon: Users,
+  },
+  {
+    id: "installers",
+    x: 2250,
+    y: 365,
+    w: 190,
+    h: 80,
+    title: "Installers / technicians",
+    lines: ["maintenance", "repair view"],
+    kind: "external-pink",
+    icon: Wrench,
+  },
+  {
+    id: "registry",
+    x: 2265,
+    y: 520,
+    w: 210,
+    h: 96,
+    title: "EU DPP Registry",
+    lines: ["operator + lookup", "verification point"],
+    kind: "external-gold",
+    icon: BadgeCheck,
+  },
+  {
+    id: "authorities",
+    x: 2560,
+    y: 538,
+    w: 180,
+    h: 78,
+    title: "Authorities",
+    lines: ["CE / CPR verification", "registry / website link"],
+    kind: "external-pink",
+    icon: ShieldCheck,
+  },
+];
 
-  %% Internal systems
-  P1[Supplier Data]
-  P2[PLM / CAD\ndesign variants / BIM objects]
-  D1[ERP / MES\nproduction and batch creation]
-  D2[PIM\nProduct Information Management]
-  D3[QMS / Q-Base\ntest results / DoP / DoC]
-  D4[LCA Calculation\nenvironmental impact / EPD data]
-  D5[ID Hub\npersistent product IDs / unique identifier generation]
-
-  %% Data integration
-  A1[Microsoft Fabric\nOneLake + pipelines\nautomatic data collection]
-  A2[In-house DPP Database\nAzure SQL / Fabric SQL\nfull data package per batch]
-  A3[QR Code Generator\nPower Automate / Azure Function]
-  A4[DPP Service Provider\nbackup / long-term copy]
-  A5[DOVISTA DPP Portal\nportal + API / human + machine readable]
-  A6[EU DPP Registry\noperator + verification lookup]
-
-  %% Users
-  U1[BIM users / architects\nAPI pull into BIM]
-  U2[BIM models / digital twins]
-  U3[End-users\nrepair / spare parts / reuse]
-  U4[Installers / technicians\nmaintenance / repair view]
-  U5[Authorities\nverification via registry / portal]
-
-  S1 --> P1
-  S2 --> P2
-  P2 --> D5
-  P1 --> A1
-  D1 --> A1
-  D2 --> A1
-  D3 --> A1
-  D4 --> A1
-  D5 --> A1
-  A1 --> A2
-  A2 --> A3
-  A2 --> A4
-  A2 --> A5
-  A5 --> A6
-  A5 --> U1
-  U1 --> U2
-  A5 --> U3
-  A5 --> U4
-  A5 --> U5
-
-  classDef source fill:#f8d8e8,stroke:#c25a8a,color:#1f2937,stroke-width:1.5px;
-  classDef system fill:#dcecff,stroke:#5d8fdc,color:#1f2937,stroke-width:1.5px;
-  classDef platform fill:#dff3de,stroke:#62a86b,color:#1f2937,stroke-width:1.8px;
-  classDef external fill:#f5e8bf,stroke:#c89f2d,color:#1f2937,stroke-width:1.5px;
-
-  class S1,S2 source;
-  class P1,P2,D1,D2,D3,D4,D5 system;
-  class A1,A2,A3,A4,A5 platform;
-  class A6,U1,U2,U3,U4,U5 external;
-`;
-
-export default function AnimatedMermaidDiagram() {
-  const containerRef = useRef(null);
-  const [error, setError] = useState("");
-  const mermaidId = useMemo(
-    () => `mermaid-diagram-${Math.random().toString(36).slice(2)}`,
-    []
-  );
-
-  useEffect(() => {
-    let cancelled = false;
-
-    async function renderDiagram() {
-      try {
-        const mermaid = (await import("mermaid")).default;
-
-        mermaid.initialize({
-          startOnLoad: false,
-          theme: "base",
-          securityLevel: "loose",
-          flowchart: {
-            curve: "basis",
-            htmlLabels: true,
-            nodeSpacing: 34,
-            rankSpacing: 64,
-            padding: 16,
-            useMaxWidth: true,
-          },
-          themeVariables: {
-            background: "#f8f7f2",
-            primaryColor: "#dff3de",
-            primaryTextColor: "#1f2937",
-            primaryBorderColor: "#62a86b",
-            lineColor: "#667085",
-            secondaryColor: "#dcecff",
-            tertiaryColor: "#f5e8bf",
-            fontFamily:
-              "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
-          },
-        });
-
-        const { svg } = await mermaid.render(mermaidId, mermaidCode);
-        if (cancelled || !containerRef.current) return;
-
-        containerRef.current.innerHTML = svg;
-        const svgEl = containerRef.current.querySelector("svg");
-        if (!svgEl) return;
-
-        svgEl.style.width = "100%";
-        svgEl.style.height = "auto";
-        svgEl.style.maxWidth = "1800px";
-        svgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
-
-        enhanceAnimation(svgEl);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to render Mermaid diagram.");
-      }
-    }
-
-    renderDiagram();
-    return () => {
-      cancelled = true;
-    };
-  }, [mermaidId]);
-
-  return (
-    <div className="min-h-screen bg-stone-100 p-6 md:p-10">
-      <div className="mx-auto max-w-7xl rounded-3xl border border-stone-200 bg-white shadow-2xl shadow-stone-300/30">
-        <div className="border-b border-stone-200 px-6 py-5 md:px-8">
-          <div className="text-sm font-medium uppercase tracking-[0.18em] text-stone-500">
-            DPP architecture flow
-          </div>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 md:text-3xl">
-            Animated Mermaid diagram
-          </h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-600 md:text-base">
-            Flow lines animate toward destination nodes, major platform nodes glow subtly,
-            and the overall layout stays simple enough to render cleanly.
-          </p>
-        </div>
-
-        <div className="overflow-x-auto p-3 md:p-6">
-          {error ? (
-            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-              {error}
-            </div>
-          ) : (
-            <div
-              ref={containerRef}
-              className="mermaid-animated-diagram flex min-w-[1200px] justify-center rounded-2xl bg-[#f8f7f2] p-4 md:p-6"
-            />
-          )}
-        </div>
-      </div>
-
-      <style>{`
-        .mermaid-animated-diagram svg {
-          overflow: visible;
-        }
-
-        .mermaid-animated-diagram .node rect,
-        .mermaid-animated-diagram .node polygon,
-        .mermaid-animated-diagram .node path,
-        .mermaid-animated-diagram .node circle {
-          filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.08));
-          animation: nodeIn 0.7s ease both;
-          transform-origin: center;
-        }
-
-        .mermaid-animated-diagram .node .label {
-          animation: fadeUp 0.7s ease both;
-        }
-
-        .mermaid-animated-diagram .edgePath path {
-          stroke-linecap: round;
-          stroke-width: 2px;
-          stroke-dasharray: 12 14;
-          animation: flowDash 1.6s linear infinite;
-          opacity: 0.95;
-        }
-
-        .mermaid-animated-diagram .edgeLabel {
-          opacity: 0;
-          animation: fadeUp 0.8s ease 0.25s forwards;
-        }
-
-        .mermaid-animated-diagram .flow-dot {
-          offset-rotate: 0deg;
-          animation: moveAlongPath 3.6s linear infinite;
-        }
-
-        .mermaid-animated-diagram .platform-glow rect,
-        .mermaid-animated-diagram .platform-glow polygon,
-        .mermaid-animated-diagram .platform-glow path {
-          animation: platformPulse 2.8s ease-in-out infinite;
-        }
-
-        @keyframes nodeIn {
-          from {
-            opacity: 0;
-            transform: scale(0.96) translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: scale(1) translateY(0);
-          }
-        }
-
-        @keyframes fadeUp {
-          from {
-            opacity: 0;
-            transform: translateY(6px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @keyframes flowDash {
-          from {
-            stroke-dashoffset: 0;
-          }
-          to {
-            stroke-dashoffset: -52;
-          }
-        }
-
-        @keyframes platformPulse {
-          0%, 100% {
-            filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.08));
-          }
-          50% {
-            filter: drop-shadow(0 0 0 rgba(34, 197, 94, 0.12)) drop-shadow(0 0 18px rgba(34, 197, 94, 0.22));
-          }
-        }
-
-        @keyframes moveAlongPath {
-          from {
-            offset-distance: 0%;
-            opacity: 0;
-          }
-          8% {
-            opacity: 1;
-          }
-          92% {
-            opacity: 1;
-          }
-          to {
-            offset-distance: 100%;
-            opacity: 0;
-          }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-function enhanceAnimation(svgEl) {
-  const nodeGroups = Array.from(svgEl.querySelectorAll("g.node"));
-  const edgePaths = Array.from(svgEl.querySelectorAll(".edgePath path"));
-
-  nodeGroups.forEach((node, index) => {
-    node.style.animationDelay = `${index * 0.04}s`;
-    const shapes = node.querySelectorAll("rect, polygon, path, circle");
-    const labels = node.querySelectorAll(".label");
-    shapes.forEach((shape) => {
-      shape.style.animationDelay = `${index * 0.04}s`;
-    });
-    labels.forEach((label) => {
-      label.style.animationDelay = `${0.08 + index * 0.04}s`;
-    });
-
-    const text = node.textContent || "";
-    if (
-      text.includes("DPP Portal") ||
-      text.includes("DPP Database") ||
-      text.includes("Fabric") ||
-      text.includes("Service Provider")
-    ) {
-      node.classList.add("platform-glow");
-    }
-  });
-
-  const svgNS = "http://www.w3.org/2000/svg";
-
-  edgePaths.forEach((path, index) => {
-    path.style.animationDelay = `${index * 0.08}s`;
-
-    const d = path.getAttribute("d");
-    if (!d) return;
-
-    const wrapper = document.createElementNS(svgNS, "g");
-    wrapper.setAttribute("class", "flow-dot");
-    wrapper.style.offsetPath = `path('${d.replace(/'/g, "\\'")}')`;
-    wrapper.style.animationDelay = `${index * 0.22}s`;
-
-    const dot = document.createElementNS(svgNS, "circle");
-    dot.setAttribute("r", "3.5");
-    dot.setAttribute("cx", "0");
-    dot.setAttribute("cy", "0");
-    dot.setAttribute("fill", "#4b5563");
-    dot.setAttribute("opacity", "0.9");
-
-    const glow = document.createElementNS(svgNS, "circle");
-    glow.setAttribute("r", "7");
-    glow.setAttribute("cx", "0");
-    glow.setAttribute("cy", "0");
-    glow.setAttribute("fill", "rgba(75, 85, 99, 0.18)");
-
-    wrapper.appendChild(glow);
-    wrapper.appendChild(dot);
-    svgEl.appendChild(wrapper);
-  });
-}
+const edges = [
+  { from: "suppliers", to: "supplierData", label: "supplier data" },
+  { from: "partners", to: "plmCad", label: "design data" },
+  { from: "supplierData", to: "fabric" },
+  { from: "plmCad", to: "idHub", label: "persistent ID" },
+  { from: "erpMes", to: "fabric", label: "new batch trigger" },
+  { from: "pim", to: "fabric" },
+  { from: "qms", to: "fabric" },
+  { from: "lca", to: "fabric" },
+  { from: "idHub", to: "fabric", label: "persistent unique ID" },
+  { from: "fabric", to: "db", label: "collect & standardize" },
+  { from: "db", to: "qr", label: "store full package" },
+  { from: "db", to: "backup", label: "backup copy" },
+  { from: "db", to: "portal", label: "publish page with data", thick: true },
+  { from: "portal", to: "bimUsers", label: "API pull" },
+  { from: "bimUsers", to: "bimModels" },
+  { from: "portal", to: "endUsers", label: "QR scan" },
+  { from: "portal", to: "installers", label: "technical view
