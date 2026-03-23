@@ -1,159 +1,317 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Animated Mermaid DPP</title>
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
-    mermaid.initialize({
-      startOnLoad: true,
-      theme: "base",
-      themeVariables: {
-        primaryColor: "#ecfdf5",
-        primaryBorderColor: "#86efac",
-        primaryTextColor: "#0f172a",
-        lineColor: "#94a3b8",
-        secondaryColor: "#eff6ff",
-        tertiaryColor: "#fffbeb",
-        fontFamily: "Inter, Arial, sans-serif"
-      },
-      flowchart: {
-        curve: "basis"
-      }
-    });
-
-    window.addEventListener("DOMContentLoaded", async () => {
-      await mermaid.run();
-
-      const svg = document.querySelector("#diagram svg");
-      if (!svg) return;
-
-      const edgePaths = [...svg.querySelectorAll(".edgePath path")];
-      const nodes = [...svg.querySelectorAll(".node")];
-
-      edgePaths.forEach((p) => {
-        const len = p.getTotalLength();
-        p.style.strokeDasharray = `${len * 0.18} ${len * 0.12}`;
-        p.style.animation = "flow 3s linear infinite";
-      });
-
-      let current = 0;
-      const sequence = [
-        { edgeIndexes: [0], nodeIndexes: [0, 2] },
-        { edgeIndexes: [1, 2, 3, 4], nodeIndexes: [1, 2] },
-        { edgeIndexes: [5], nodeIndexes: [2, 3] },
-        { edgeIndexes: [6], nodeIndexes: [3, 4] },
-        { edgeIndexes: [7, 8], nodeIndexes: [4, 5] }
-      ];
-
-      function clearActive() {
-        edgePaths.forEach((p) => p.classList.remove("active-edge"));
-        nodes.forEach((n) => n.classList.remove("active-node"));
-      }
-
-      function playStep(step) {
-        clearActive();
-        step.edgeIndexes.forEach(i => edgePaths[i]?.classList.add("active-edge"));
-        step.nodeIndexes.forEach(i => nodes[i]?.classList.add("active-node"));
-      }
-
-      playStep(sequence[current]);
-
-      setInterval(() => {
-        current = (current + 1) % sequence.length;
-        playStep(sequence[current]);
-      }, 2200);
-    });
-  </script>
-
-  <style>
-    body {
-      font-family: Inter, Arial, sans-serif;
-      background: #f8fafc;
-      margin: 0;
-      padding: 32px;
-    }
-
-    .wrap {
-      max-width: 1400px;
-      margin: 0 auto;
-      background: white;
-      border: 1px solid #e2e8f0;
-      border-radius: 24px;
-      padding: 24px;
-      box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-    }
-
-    #diagram svg {
-      width: 100%;
-      height: auto;
-    }
-
-    .edgePath path {
-      stroke-width: 2.5px !important;
-      stroke: #cbd5e1 !important;
-      transition: stroke 0.35s ease, filter 0.35s ease, opacity 0.35s ease;
-      opacity: 0.5;
-    }
-
-    .active-edge {
-      stroke: #10b981 !important;
-      opacity: 1 !important;
-      filter: drop-shadow(0 0 6px rgba(16,185,129,0.35));
-    }
-
-    .node rect,
-    .node polygon,
-    .node circle {
-      transition: all 0.35s ease;
-    }
-
-    .node.active-node rect,
-    .node.active-node polygon,
-    .node.active-node circle {
-      stroke: #10b981 !important;
-      stroke-width: 2px !important;
-      filter: drop-shadow(0 8px 18px rgba(16,185,129,0.18));
-    }
-
-    @keyframes flow {
-      from {
-        stroke-dashoffset: 120;
-      }
-      to {
-        stroke-dashoffset: 0;
-      }
-    }
-  </style>
-</head>
-<body>
-  <div class="wrap">
-    <div id="diagram" class="mermaid">
+const mermaidCode = String.raw`
 flowchart LR
+  %% Sources
+  S1[Supplier portals\nCO2 / EPD data / chemical info / docs]
+  S2[Partners / Retailers / Specifiers\nproject requirements]
 
-  ERP["ERP / MES<br/>Production + batch creation"]
-  SOURCES["Core source data<br/>PIM · QMS · LCA/EPD · ID Hub"]
-  FABRIC["Microsoft Fabric<br/>Transform + standardize"]
-  DB["In-house DPP Database<br/>Governed passport package"]
-  PORTAL["DOVISTA DPP Portal<br/>QR-linked experience"]
-  ACCESS["Stakeholder Access<br/>Users · Service · BIM · Authorities"]
+  %% Internal systems
+  P1[Supplier Data]
+  P2[PLM / CAD\ndesign variants / BIM objects]
+  D1[ERP / MES\nproduction and batch creation]
+  D2[PIM\nProduct Information Management]
+  D3[QMS / Q-Base\ntest results / DoP / DoC]
+  D4[LCA Calculation\nenvironmental impact / EPD data]
+  D5[ID Hub\npersistent product IDs / unique identifier generation]
 
-  ERP --> FABRIC
-  SOURCES --> FABRIC
-  FABRIC --> DB
-  DB --> PORTAL
-  PORTAL --> ACCESS
+  %% Data integration
+  A1[Microsoft Fabric\nOneLake + pipelines\nautomatic data collection]
+  A2[In-house DPP Database\nAzure SQL / Fabric SQL\nfull data package per batch]
+  A3[QR Code Generator\nPower Automate / Azure Function]
+  A4[DPP Service Provider\nbackup / long-term copy]
+  A5[DOVISTA DPP Portal\nportal + API / human + machine readable]
+  A6[EU DPP Registry\noperator + verification lookup]
 
-  classDef blue fill:#eff6ff,stroke:#93c5fd,color:#0f172a;
-  classDef green fill:#ecfdf5,stroke:#86efac,color:#0f172a;
-  classDef amber fill:#fffbeb,stroke:#fcd34d,color:#0f172a;
+  %% Users
+  U1[BIM users / architects\nAPI pull into BIM]
+  U2[BIM models / digital twins]
+  U3[End-users\nrepair / spare parts / reuse]
+  U4[Installers / technicians\nmaintenance / repair view]
+  U5[Authorities\nverification via registry / portal]
 
-  class ERP,SOURCES blue;
-  class FABRIC,DB,PORTAL green;
-  class ACCESS amber;
+  S1 --> P1
+  S2 --> P2
+  P2 --> D5
+  P1 --> A1
+  D1 --> A1
+  D2 --> A1
+  D3 --> A1
+  D4 --> A1
+  D5 --> A1
+  A1 --> A2
+  A2 --> A3
+  A2 --> A4
+  A2 --> A5
+  A5 --> A6
+  A5 --> U1
+  U1 --> U2
+  A5 --> U3
+  A5 --> U4
+  A5 --> U5
+
+  classDef source fill:#f8d8e8,stroke:#c25a8a,color:#1f2937,stroke-width:1.5px;
+  classDef system fill:#dcecff,stroke:#5d8fdc,color:#1f2937,stroke-width:1.5px;
+  classDef platform fill:#dff3de,stroke:#62a86b,color:#1f2937,stroke-width:1.8px;
+  classDef external fill:#f5e8bf,stroke:#c89f2d,color:#1f2937,stroke-width:1.5px;
+
+  class S1,S2 source;
+  class P1,P2,D1,D2,D3,D4,D5 system;
+  class A1,A2,A3,A4,A5 platform;
+  class A6,U1,U2,U3,U4,U5 external;
+`;
+
+export default function AnimatedMermaidDiagram() {
+  const containerRef = useRef(null);
+  const [error, setError] = useState("");
+  const mermaidId = useMemo(
+    () => `mermaid-diagram-${Math.random().toString(36).slice(2)}`,
+    []
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function renderDiagram() {
+      try {
+        const mermaid = (await import("mermaid")).default;
+
+        mermaid.initialize({
+          startOnLoad: false,
+          theme: "base",
+          securityLevel: "loose",
+          flowchart: {
+            curve: "basis",
+            htmlLabels: true,
+            nodeSpacing: 34,
+            rankSpacing: 64,
+            padding: 16,
+            useMaxWidth: true,
+          },
+          themeVariables: {
+            background: "#f8f7f2",
+            primaryColor: "#dff3de",
+            primaryTextColor: "#1f2937",
+            primaryBorderColor: "#62a86b",
+            lineColor: "#667085",
+            secondaryColor: "#dcecff",
+            tertiaryColor: "#f5e8bf",
+            fontFamily:
+              "Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif",
+          },
+        });
+
+        const { svg } = await mermaid.render(mermaidId, mermaidCode);
+        if (cancelled || !containerRef.current) return;
+
+        containerRef.current.innerHTML = svg;
+        const svgEl = containerRef.current.querySelector("svg");
+        if (!svgEl) return;
+
+        svgEl.style.width = "100%";
+        svgEl.style.height = "auto";
+        svgEl.style.maxWidth = "1800px";
+        svgEl.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+        enhanceAnimation(svgEl);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Failed to render Mermaid diagram.");
+      }
+    }
+
+    renderDiagram();
+    return () => {
+      cancelled = true;
+    };
+  }, [mermaidId]);
+
+  return (
+    <div className="min-h-screen bg-stone-100 p-6 md:p-10">
+      <div className="mx-auto max-w-7xl rounded-3xl border border-stone-200 bg-white shadow-2xl shadow-stone-300/30">
+        <div className="border-b border-stone-200 px-6 py-5 md:px-8">
+          <div className="text-sm font-medium uppercase tracking-[0.18em] text-stone-500">
+            DPP architecture flow
+          </div>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight text-stone-900 md:text-3xl">
+            Animated Mermaid diagram
+          </h1>
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-600 md:text-base">
+            Flow lines animate toward destination nodes, major platform nodes glow subtly,
+            and the overall layout stays simple enough to render cleanly.
+          </p>
+        </div>
+
+        <div className="overflow-x-auto p-3 md:p-6">
+          {error ? (
+            <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+              {error}
+            </div>
+          ) : (
+            <div
+              ref={containerRef}
+              className="mermaid-animated-diagram flex min-w-[1200px] justify-center rounded-2xl bg-[#f8f7f2] p-4 md:p-6"
+            />
+          )}
+        </div>
+      </div>
+
+      <style>{`
+        .mermaid-animated-diagram svg {
+          overflow: visible;
+        }
+
+        .mermaid-animated-diagram .node rect,
+        .mermaid-animated-diagram .node polygon,
+        .mermaid-animated-diagram .node path,
+        .mermaid-animated-diagram .node circle {
+          filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.08));
+          animation: nodeIn 0.7s ease both;
+          transform-origin: center;
+        }
+
+        .mermaid-animated-diagram .node .label {
+          animation: fadeUp 0.7s ease both;
+        }
+
+        .mermaid-animated-diagram .edgePath path {
+          stroke-linecap: round;
+          stroke-width: 2px;
+          stroke-dasharray: 12 14;
+          animation: flowDash 1.6s linear infinite;
+          opacity: 0.95;
+        }
+
+        .mermaid-animated-diagram .edgeLabel {
+          opacity: 0;
+          animation: fadeUp 0.8s ease 0.25s forwards;
+        }
+
+        .mermaid-animated-diagram .flow-dot {
+          offset-rotate: 0deg;
+          animation: moveAlongPath 3.6s linear infinite;
+        }
+
+        .mermaid-animated-diagram .platform-glow rect,
+        .mermaid-animated-diagram .platform-glow polygon,
+        .mermaid-animated-diagram .platform-glow path {
+          animation: platformPulse 2.8s ease-in-out infinite;
+        }
+
+        @keyframes nodeIn {
+          from {
+            opacity: 0;
+            transform: scale(0.96) translateY(8px);
+          }
+          to {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        @keyframes fadeUp {
+          from {
+            opacity: 0;
+            transform: translateY(6px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @keyframes flowDash {
+          from {
+            stroke-dashoffset: 0;
+          }
+          to {
+            stroke-dashoffset: -52;
+          }
+        }
+
+        @keyframes platformPulse {
+          0%, 100% {
+            filter: drop-shadow(0 10px 18px rgba(15, 23, 42, 0.08));
+          }
+          50% {
+            filter: drop-shadow(0 0 0 rgba(34, 197, 94, 0.12)) drop-shadow(0 0 18px rgba(34, 197, 94, 0.22));
+          }
+        }
+
+        @keyframes moveAlongPath {
+          from {
+            offset-distance: 0%;
+            opacity: 0;
+          }
+          8% {
+            opacity: 1;
+          }
+          92% {
+            opacity: 1;
+          }
+          to {
+            offset-distance: 100%;
+            opacity: 0;
+          }
+        }
+      `}</style>
     </div>
-  </div>
-</body>
-</html>
+  );
+}
+
+function enhanceAnimation(svgEl) {
+  const nodeGroups = Array.from(svgEl.querySelectorAll("g.node"));
+  const edgePaths = Array.from(svgEl.querySelectorAll(".edgePath path"));
+
+  nodeGroups.forEach((node, index) => {
+    node.style.animationDelay = `${index * 0.04}s`;
+    const shapes = node.querySelectorAll("rect, polygon, path, circle");
+    const labels = node.querySelectorAll(".label");
+    shapes.forEach((shape) => {
+      shape.style.animationDelay = `${index * 0.04}s`;
+    });
+    labels.forEach((label) => {
+      label.style.animationDelay = `${0.08 + index * 0.04}s`;
+    });
+
+    const text = node.textContent || "";
+    if (
+      text.includes("DPP Portal") ||
+      text.includes("DPP Database") ||
+      text.includes("Fabric") ||
+      text.includes("Service Provider")
+    ) {
+      node.classList.add("platform-glow");
+    }
+  });
+
+  const svgNS = "http://www.w3.org/2000/svg";
+
+  edgePaths.forEach((path, index) => {
+    path.style.animationDelay = `${index * 0.08}s`;
+
+    const d = path.getAttribute("d");
+    if (!d) return;
+
+    const wrapper = document.createElementNS(svgNS, "g");
+    wrapper.setAttribute("class", "flow-dot");
+    wrapper.style.offsetPath = `path('${d.replace(/'/g, "\\'")}')`;
+    wrapper.style.animationDelay = `${index * 0.22}s`;
+
+    const dot = document.createElementNS(svgNS, "circle");
+    dot.setAttribute("r", "3.5");
+    dot.setAttribute("cx", "0");
+    dot.setAttribute("cy", "0");
+    dot.setAttribute("fill", "#4b5563");
+    dot.setAttribute("opacity", "0.9");
+
+    const glow = document.createElementNS(svgNS, "circle");
+    glow.setAttribute("r", "7");
+    glow.setAttribute("cx", "0");
+    glow.setAttribute("cy", "0");
+    glow.setAttribute("fill", "rgba(75, 85, 99, 0.18)");
+
+    wrapper.appendChild(glow);
+    wrapper.appendChild(dot);
+    svgEl.appendChild(wrapper);
+  });
+}
