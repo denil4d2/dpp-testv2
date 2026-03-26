@@ -1,0 +1,17 @@
+export const methodologyConfig = {
+  governingStandard: 'EN 15804:2012+A2:2019/AC:2021',
+  governingPcr: 'PCR 2019:14 VERSION 2.0.1',
+  declaredUnit: '1 m²',
+  conversionFactorKgPerM2: 36.8,
+  referenceServiceLifeYears: 50,
+  defaultTransportVehicle: 'EURO 5 truck',
+  defaultElectricityFactor: 0.025,
+  defaultWoodWasteRate: 0.07,
+  defaultAluminiumWasteRate: 0.15,
+  activeModules: ['A1', 'A2', 'A3', 'B4', 'C1', 'C2', 'C3', 'C4', 'D'],
+  previewModules: [],
+  indicatorFramework: 'EN 15804+A2 climate indicators',
+  supportingFactorField: 'GWP-GHG',
+  workingIndicatorName: 'GWP-total',
+  calculationEngineVersion: '2.1.0-local-full-generator-en15804a2',
+};

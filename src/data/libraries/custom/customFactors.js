@@ -1,0 +1,25 @@
+export const customFactors = [
+  {
+    factorId: 'FAC-ALU-HYDRO-001',
+    factorName: 'Aluminium profile — Hydro placeholder',
+    factorFamily: 'materials',
+    materialCategory: 'aluminium',
+    materialSubtype: 'cladding/profile',
+    sourceType: 'supplier_epd',
+    sourceStatus: 'provisional',
+    sourceReference: 'Supplier-specific placeholder',
+    sourcePublisher: 'Hydro placeholder',
+    geography: 'SE',
+    validityYear: 2024,
+    version: '0.1',
+    unit: 'kg',
+    indicatorFramework: 'EN 15804+A2 supplier EPD',
+    indicatorName: 'GWP-total',
+    factorValue: 7.6,
+    priority: 90,
+    isDefault: false,
+    openLcaDatasetId: 'supplier/hydro-alu-placeholder',
+    notes: 'Project-level custom factor placeholder that outranks generic aluminium.',
+    active: true,
+  }
+];
